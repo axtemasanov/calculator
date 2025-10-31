@@ -1,1 +1,1 @@
-
+{"typeName":"","color":"#FF455A64","name":"u-ef#k(U}@","palette":"244","spec":"signApkOnPath %s ExportPath %s ","type":" ","code":"try {\n\tMain apkSign \u003d new Main();\n\tapkSign.setAssetsFiles(mInput1,mInput2,mInput3);\n\tapkSign.sign(new java.io.File(%1$s),%2$s);\n} catch(Exception e) {\n\tToast.makeText(getApplicationContext(),e.getMessage(),Toast.LENGTH_LONG);\n}"}
