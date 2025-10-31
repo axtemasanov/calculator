@@ -1,270 +1,196 @@
-<!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>iOS Style Calculator</title>
+    <title>Калькулятор</title>
     <style>
-        /* Base reset and box sizing */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        /* System fonts and dark theme */
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell;
-            background: #000;
-            color: white;
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
+            height: 100vh;
+            margin: 0;
+            background-color: #000;
+            font-family: 'Arial', sans-serif;
         }
-
-        /* Calculator container */
         .calculator {
-            width: 100%;
-            max-width: 375px;
+            width: 320px;
+            height: 620px;
+            background-color: #1a1a1a;
+            border-radius: 20px;
             padding: 20px;
-            background: #000;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            display: grid;
+            grid-template-rows: 120px 40px auto;
+            gap: 10px;
         }
-
-        /* Display styling */
         .display {
-            font-size: 80px;
-            font-weight: 300;
-            text-align: right;
-            padding: 20px 10px;
-            min-height: 120px;
+            background-color: #333;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding: 0 20px;
+            font-size: 32px;
+            color: #fff;
             overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
         }
-
-        /* Button grid layout */
-        .buttons {
+        .top-functions {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
             gap: 10px;
         }
-
-        /* Button base styles */
+        .small {
+            height: 40px;
+            font-size: 16px;
+            border-radius: 20px;
+        }
+        .buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: repeat(5, 70px);
+            gap: 12px;
+        }
         .btn {
+            border-radius: 35px;
             border: none;
-            border-radius: 50%;
-            width: 100%;
-            height: 0;
-            padding-bottom: 100%;
             font-size: 28px;
+            font-weight: bold;
             cursor: pointer;
-            position: relative;
-            background: #333;
-            color: white;
-            transition: filter 0.2s;
+            transition: all 0.1s;
             display: flex;
-            justify-content: center;
             align-items: center;
+            justify-content: center;
+            height: 100%;
         }
-
-        .btn span {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
+        .btn:hover {
+            transform: scale(1.02);
         }
-
         .btn:active {
-            filter: brightness(130%);
+            transform: scale(0.98);
         }
-
-        /* Functional buttons */
-        .btn-func {
-            background: #a5a5a5;
-            color: #000;
+        .btn-gray {
+            background-color: #666;
+            color: #fff;
         }
-
-        .btn-operator {
-            background: #fe9e09;
-            font-size: 34px;
+        .btn-dark-gray {
+            background-color: #333;
+            color: #fff;
         }
-
-        /* Zero button special case */
+        .btn-yellow {
+            background-color: #f9a825;
+            color: #fff;
+        }
+        .op-btn {
+            background-color: #ff9500;
+            color: #fff;
+        }
         .btn-zero {
             grid-column: span 2;
-            border-radius: 55px;
-            padding-bottom: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .btn-zero span {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-        }
-
-        /* Responsive adjustments */
-        @media (min-width: 420px) {
-            .btn:hover {
-                filter: brightness(130%);
-            }
         }
     </style>
 </head>
 <body>
-    <div class="calculator" role="application" aria-label="Calculator">
-        <div class="display" role="status" aria-live="polite">0</div>
+    <div class="calculator">
+        <div class="display">
+            <span id="display">0</span>
+        </div>
+        <div class="top-functions">
+            <button class="btn btn-gray small" onclick="appendSymbol('√')">√</button>
+            <button class="btn btn-gray small" onclick="appendSymbol('π')">π</button>
+            <button class="btn btn-gray small" onclick="appendSymbol('^')">^</button>
+            <button class="btn btn-gray small" onclick="appendSymbol('!')">!</button>
+        </div>
         <div class="buttons">
-            <button class="btn btn-func" data-action="clear"><span>AC</span></button>
-            <button class="btn btn-func" data-action="sign"><span>±</span></button>
-            <button class="btn btn-func" data-action="percent"><span>%</span></button>
-            <button class="btn btn-operator" data-action="divide"><span>÷</span></button>
-            
-            <button class="btn" data-number="7"><span>7</span></button>
-            <button class="btn" data-number="8"><span>8</span></button>
-            <button class="btn" data-number="9"><span>9</span></button>
-            <button class="btn btn-operator" data-action="multiply"><span>×</span></button>
-            
-            <button class="btn" data-number="4"><span>4</span></button>
-            <button class="btn" data-number="5"><span>5</span></button>
-            <button class="btn" data-number="6"><span>6</span></button>
-            <button class="btn btn-operator" data-action="subtract"><span>−</span></button>
-            
-            <button class="btn" data-number="1"><span>1</span></button>
-            <button class="btn" data-number="2"><span>2</span></button>
-            <button class="btn" data-number="3"><span>3</span></button>
-            <button class="btn btn-operator" data-action="add"><span>+</span></button>
-            
-            <button class="btn btn-zero" data-number="0"><span>0</span></button>
-            <button class="btn" data-number="."><span>.</span></button>
-            <button class="btn btn-operator" data-action="calculate"><span>=</span></button>
+            <button class="btn btn-gray" onclick="clearAll()">AC</button>
+            <button class="btn btn-gray" onclick="appendSymbol('(')">(</button>
+            <button class="btn btn-gray" onclick="appendSymbol('%')">%</button>
+            <button class="btn op-btn" onclick="appendSymbol('÷')">÷</button>
+
+            <button class="btn btn-dark-gray" onclick="appendNumber('7')">7</button>
+            <button class="btn btn-dark-gray" onclick="appendNumber('8')">8</button>
+            <button class="btn btn-dark-gray" onclick="appendNumber('9')">9</button>
+            <button class="btn op-btn" onclick="appendSymbol('×')">×</button>
+
+            <button class="btn btn-dark-gray" onclick="appendNumber('4')">4</button>
+            <button class="btn btn-dark-gray" onclick="appendNumber('5')">5</button>
+            <button class="btn btn-dark-gray" onclick="appendNumber('6')">6</button>
+            <button class="btn op-btn" onclick="appendSymbol('-')">-</button>
+
+            <button class="btn btn-dark-gray" onclick="appendNumber('1')">1</button>
+            <button class="btn btn-dark-gray" onclick="appendNumber('2')">2</button>
+            <button class="btn btn-dark-gray" onclick="appendNumber('3')">3</button>
+            <button class="btn op-btn" onclick="appendSymbol('+')">+</button>
+
+            <button class="btn btn-dark-gray btn-zero" onclick="appendNumber('0')">0</button>
+            <button class="btn btn-gray" onclick="appendSymbol('.')">.</button>
+            <button class="btn btn-yellow" onclick="calculate()">=</button>
         </div>
     </div>
 
     <script>
-        class Calculator {
-            constructor() {
-                this.display = document.querySelector('.display');
-                this.reset();
-                this.bindEvents();
-            }
+        let expression = '';
+        const displayEl = document.getElementById('display');
 
-            reset() {
-                this.currentOperand = '0';
-                this.previousOperand = null;
-                this.operation = null;
-                this.updateDisplay();
-            }
+        function formatForDisplay(expr) {
+            return expr
+                .replace(/\*/g, '×')
+                .replace(/\//g, '÷')
+                .replace(/\*\*/g, '^');
+        }
 
-            appendNumber(number) {
-                if (number === '.' && this.currentOperand.includes('.')) return;
-                if (this.currentOperand === '0' && number !== '.') {
-                    this.currentOperand = number;
-                } else {
-                    this.currentOperand += number;
-                }
-                this.updateDisplay();
-            }
+        function appendNumber(num) {
+            expression += num;
+            updateDisplay();
+        }
 
-            chooseOperation(operation) {
-                if (this.currentOperand === '') return;
-                if (this.previousOperand !== null) this.calculate();
-                this.operation = operation;
-                this.previousOperand = this.currentOperand;
-                this.currentOperand = '0';
-            }
+        function appendSymbol(sym) {
+            let internalSym = sym;
+            if (sym === '×') internalSym = '*';
+            else if (sym === '÷') internalSym = '/';
+            else if (sym === '^') internalSym = '**';
+            else if (sym === '√') internalSym = 'Math.sqrt(';
+            else if (sym === 'π') internalSym = 'Math.PI';
+            // Для ! — простое добавление (можно доработать на факториал)
+            expression += internalSym;
+            updateDisplay();
+        }
 
-            calculate() {
-                let computation;
-                const prev = parseFloat(this.previousOperand);
-                const current = parseFloat(this.currentOperand);
-                
-                if (isNaN(prev) || isNaN(current)) return;
+        function clearAll() {
+            expression = '';
+            updateDisplay();
+        }
 
-                switch (this.operation) {
-                    case '+':
-                        computation = prev + current;
-                        break;
-                    case '−':
-                        computation = prev - current;
-                        break;
-                    case '×':
-                        computation = prev * current;
-                        break;
-                    case '÷':
-                        computation = prev / current;
-                        break;
-                    default: return;
-                }
-
-                this.currentOperand = computation.toString();
-                this.operation = null;
-                this.previousOperand = null;
-                this.updateDisplay();
-            }
-
-            updateDisplay() {
-                this.display.textContent = this.currentOperand;
-            }
-
-            handleButtonClick(e) {
-                const button = e.target.closest('button');
-                if (!button) return;
-                
-                const target = button;
-                
-                if (target.dataset.number) {
-                    this.appendNumber(target.dataset.number);
-                } else if (target.dataset.action) {
-                    const action = target.dataset.action;
-                    
-                    switch(action) {
-                        case 'clear':
-                            this.reset();
-                            break;
-                        case 'sign':
-                            this.currentOperand = (-parseFloat(this.currentOperand)).toString();
-                            this.updateDisplay();
-                            break;
-                        case 'percent':
-                            this.currentOperand = (parseFloat(this.currentOperand) / 100).toString();
-                            this.updateDisplay();
-                            break;
-                        case 'calculate':
-                            this.calculate();
-                            break;
-                        default:
-                            this.chooseOperation(target.textContent.trim());
-                    }
+        function updateDisplay() {
+            let displayText = formatForDisplay(expression);
+            if (expression) {
+                try {
+                    const res = eval(expression);
+                    displayText += `=${res}`;
+                } catch (e) {
+                    // Для неполных выражений просто показываем =
+                    displayText += '=';
                 }
             }
+            displayEl.textContent = displayText || '0';
+        }
 
-            bindEvents() {
-                // Mouse clicks
-                document.querySelector('.buttons').addEventListener('click', (e) => {
-                    this.handleButtonClick(e);
-                });
-
-                // Keyboard support
-                document.addEventListener('keydown', (e) => {
-                    if (e.key >= '0' && e.key <= '9' || e.key === '.') {
-                        this.appendNumber(e.key);
-                    } else if (['+', '-', '*', '/'].includes(e.key)) {
-                        const ops = {'+': '+', '-': '−', '*': '×', '/': '÷'};
-                        this.chooseOperation(ops[e.key]);
-                    } else if (e.key === 'Enter' || e.key === '=') {
-                        this.calculate();
-                    } else if (e.key === 'Escape') {
-                        this.reset();
-                    }
-                });
+        function calculate() {
+            try {
+                const res = eval(expression);
+                expression = res.toString();
+                updateDisplay();
+            } catch (e) {
+                displayEl.textContent = 'Error';
+                expression = '';
             }
         }
 
-        // Initialize calculator
-        new Calculator();
+        // Инициализация с твоим примером
+        expression = '';
+        updateDisplay();
     </script>
 </body>
 </html>
