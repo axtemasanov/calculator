@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>iOS‑style Calculator</title>
+<style>
+:root{
+  --bg:#0b0b0b;--panel:#1b1b1b;--btn-dark:#2e2e2e;--btn-light:#d4d4d2;
+  --btn-func:#505050;--accent:#ff9500;--text-light:#ffffff;
+}
+html,body{height:100%;margin:0;background:linear-gradient(180deg,#0f0f10,#0b0b0b);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial}
+.wrap{min-height:100%;display:flex;align-items:center;justify-content:center;padding:24px}
+.calc{width:360px;max-width:96vw;background:linear-gradient(180deg,var(--panel),#111);border-radius:32px;padding:18px;box-shadow:0 20px 40px rgba(0,0,0,.6)}
+.display{height:96px;color:var(--text-light);display:flex;flex-direction:column;align-items:flex-end;justify-content:center;padding:8px 16px;font-size:42px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.subdisplay{font-size:14px;opacity:.6;height:18px;align-self:flex-start;margin-bottom:6px}
+.keys{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:6px 2px}
+button{border:0;padding:18px;font-size:20px;border-radius:14px;color:var(--text-light);cursor:pointer;user-select:none;box-shadow:0 6px 0 rgba(0,0,0,.35)}
+button:active{transform:translateY(2px);box-shadow:0 4px 0 rgba(0,0,0,.25)}
+.btn-digit{background:linear-gradient(180deg,var(--btn-dark),#1f1f1f)}
+.btn-0{grid-column:span 2;border-radius:22px;text-align:left;padding-left:34px}
+.btn-func{background:linear-gradient(180deg,var(--btn-func),#424242);font-weight:600}
+.btn-light{background:var(--btn-light);color:#000;font-weight:600}
+.btn-accent{background:linear-gradient(180deg,var(--accent),#e07a00);color:#fff;font-weight:700}
+@media (max-width:420px){ .display{font-size:34px;height:84px} button{padding:14px;font-size:18px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="calc" role="application" aria-label="Калькулятор">
+    <div class="display">
+      <div class="subdisplay" id="history"></div>
+      <div id="display">0</div>
+    </div>
+    <div class="keys" id="keys">
+      <button class="btn-func btn-light" data-action="clear">AC</button>
+      <button class="btn-func" data-action="plusminus">±</button>
+      <button class="btn-func" data-action="percent">%</button>
+      <button class="btn-accent" data-action="op">÷</button>
+
+      <button class="btn-digit" data-value="7">7</button>
+      <button class="btn-digit" data-value="8">8</button>
+      <button class="btn-digit" data-value="9">9</button>
+      <button class="btn-accent" data-action="op">×</button>
+
+      <button class="btn-digit" data-value="4">4</button>
+      <button class="btn-digit" data-value="5">5</button>
+      <button class="btn-digit" data-value="6">6</button>
+      <button class="btn-accent" data-action="op">−</button>
+
+      <button class="btn-digit" data-value="1">1</button>
+      <button class="btn-digit" data-value="2">2</button>
+      <button class="btn-digit" data-value="3">3</button>
+      <button class="btn-accent" data-action="op">+</button>
+
+      <button class="btn-digit btn-0" data-value="0">0</button>
+      <button class="btn-digit" data-value=".">.</button>
+      <button class="btn-accent" data-action="equals">=</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const display = document.getElementById('display');
+  const historyEl = document.getElementById('history');
+  const keys = document.getElementById('keys');
+  let expr = '';
+  let lastWasEval = false;
+
+  function render(val){ display.textContent = String(val); }
+  function visibleToJS(s){ return s.replace(/×/g,'*').replace(/÷/g,'/').replace(/−/g,'-'); }
+  function sanitize(s){
+    if (!/^[0-9+\-*/().% ]*$/.test(s)) throw 'Недопустимый ввод';
+    return s.replace(/(\d+(\.\d+)?)%/g,'($1/100)');
+  }
+  function safeEval(s){
+    const t = sanitize(s);
+    return Function('"use strict";return ('+t+')')();
+  }
+
+  keys.addEventListener('click', (e)=>{
+    const btn = e.target.closest('button'); if(!btn) return;
+    const v = btn.dataset.value, action = btn.dataset.action;
+    if (v !== undefined){
+      if (lastWasEval){ expr = ''; lastWasEval = false; }
+      if (v === '.'){
+        const parts = expr.split(/[\+\-\*\/\(\)]/).filter(Boolean);
+        const last = parts[parts.length-1]||'';
+        if (last.includes('.')) return;
+      }
+      expr += v;
+      render(expr || '0');
+      return;
+    }
+    if (action === 'clear'){ expr=''; historyEl.textContent=''; render('0'); return; }
+    if (action === 'op'){
+      const op = btn.textContent.trim();
+      if (expr === '' && op === '−'){ expr='-'; render(expr); return; }
+      expr = expr.replace(/[\+\-\*\/\. ]+$/,'');
+      expr += ' ' + op + ' ';
+      expr = visibleToJS(expr);
+      render(expr);
+      lastWasEval = false;
+      return;
+    }
+    if (action === 'equals'){
+      try{
+        const toEval = expr || '0';
+        const result = safeEval(visibleToJS(toEval));
+        historyEl.textContent = toEval + ' =';
+        render(Number.isFinite(result) ? (Number.isInteger(result) ? result : +result.toPrecision(12)) : 'Ошибка');
+        expr = String(result);
+        lastWasEval = true;
+      }catch{ render('Ошибка'); expr=''; lastWasEval=false; }
+      return;
+    }
+    if (action === 'percent'){
+      try{
+        const res = safeEval(sanitize(visibleToJS(expr||'0')+'%'));
+        render(Number.isFinite(res)?res:'Ошибка');
+        expr = String(res); lastWasEval=true;
+      }catch{ render('Ошибка'); expr=''; }
+      return;
+    }
+    if (action === 'plusminus'){
+      try{
+        if (expr==='') return;
+        const res = safeEval(sanitize(visibleToJS(expr)));
+        const neg = -res;
+        render(neg); expr = String(neg); lastWasEval = true;
+      }catch{ render('Ошибка'); expr=''; }
+    }
+  });
+
+  window.addEventListener('keydown', (e)=>{
+    if (/^\d$/.test(e.key) || e.key === '.') document.querySelector(`button[data-value="${e.key}"]`)?.click();
+    else if (e.key === 'Enter' || e.key === '=') document.querySelector('button[data-action="equals"]').click();
+    else if (e.key === 'Backspace'){ expr = expr.slice(0,-1); render(expr||'0'); }
+    else if (['+','-','*','/','%','(',')'].includes(e.key)){
+      const map = {'*':'×','/':'÷','-':'−','+':'+'};
+      const mapped = map[e.key] || e.key;
+      // simulate op press
+      const fake = Array.from(document.querySelectorAll('button[data-action="op"]')).find(b=>b.textContent.trim()===mapped);
+      if (fake) fake.click();
+      else {
+        expr = expr.replace(/[\+\-\*\/\. ]+$/,'');
+        expr += ' ' + mapped + ' ';
+        expr = visibleToJS(expr);
+        render(expr); lastWasEval=false;
+      }
+    }
+  });
+})();
+</script>
+</body>
+</html>
