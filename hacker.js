@@ -1,25 +1,41 @@
-// === БЕСПЛАТНЫЙ ИИ В БРАУЗЕРЕ (Hugging Face) ===
+// === DEBUG VERSION: С ЛОГАМИ ===
+console.log('Hacker.js загружен!');
+
 let generator = null;
 let aiEnabled = false;
 
 const loadAI = async () => {
+  console.log('loadAI вызвана!');
   if (aiEnabled) return;
   typeLine("[AI] Загрузка модели... (10-20 сек)", 'system');
   try {
+    console.log('Импорт transformers...');
     const { pipeline } = await import('https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2');
+    console.log('Pipeline загружен!');
     generator = await pipeline('text-generation', 'Xenova/distilgpt2');
     aiEnabled = true;
+    console.log('AI готов!');
     typeLine("[AI] ГОТОВ. Пиши: ai <вопрос>", 'success');
   } catch (e) {
+    console.error('Ошибка AI:', e);
     typeLine("[AI] Ошибка загрузки. Нет интернета?", 'error');
   }
 };
 
 // === ОСНОВНОЙ КОД ===
+console.log('DOM элементы...');
 const output = document.getElementById('output');
 const input = document.getElementById('cmd');
 const typeSound = document.getElementById('typeSound');
 let history = [], historyIndex = -1;
+
+console.log('output:', output);
+console.log('input:', input);
+console.log('typeSound:', typeSound);
+
+if (!output || !input) {
+  console.error('DOM не найден! Проверь index.html');
+}
 
 // Эффекты
 document.querySelector('.terminal').classList.add('crt');
@@ -40,8 +56,10 @@ typeLine("");
 
 // Ввод
 input.addEventListener('keydown', e => {
+  console.log('Keydown:', e.key);
   if (e.key === 'Enter') {
     const cmd = input.value.trim();
+    console.log('Enter нажат, cmd:', cmd);
     if (cmd) {
       addLine(`guest@anon:~$ ${cmd}`, 'input');
       processCommand(cmd);
@@ -62,6 +80,7 @@ input.addEventListener('keydown', e => {
 });
 
 function processCommand(cmd) {
+  console.log('processCommand вызвана:', cmd);
   const lower = cmd.toLowerCase();
   if (lower === 'help') {
     typeLine("msg <текст> — анонимка");
@@ -70,6 +89,7 @@ function processCommand(cmd) {
     typeLine("ai on — включить ИИ");
     typeLine("ai <вопрос> — спросить");
   } else if (lower === 'ai on') {
+    console.log('AI ON!');
     loadAI();
   } else if (lower.startsWith('ai ')) {
     const q = cmd.slice(3).trim();
@@ -89,16 +109,19 @@ function processCommand(cmd) {
 }
 
 async function generateAI(q) {
+  console.log('generateAI:', q);
   try {
     const res = await generator(`Q: ${q}\nA:`, { max_new_tokens: 50 });
     const ans = res[0].generated_text.split('A:')[1]?.trim() || "Не понял.";
     typeLine(`[AI] ${ans}`, 'ai');
   } catch (e) {
+    console.error('AI gen error:', e);
     typeLine("[AI] Ошибка.", 'error');
   }
 }
 
 function typeLine(text, type = '') {
+  console.log('typeLine:', text);
   const line = document.createElement('div');
   line.className = `line ${type}`;
   output.appendChild(line);
@@ -113,6 +136,7 @@ function typeLine(text, type = '') {
 }
 
 function addLine(text, type = '') {
+  console.log('addLine:', text);
   const line = document.createElement('div');
   line.className = `line ${type}`;
   line.textContent = text;
@@ -131,3 +155,5 @@ function hackSimulation() {
   };
   run();
 }
+
+console.log('Hacker.js готов!');
