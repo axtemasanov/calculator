@@ -1,3 +1,8 @@
+// Инициализация Transformers.js
+const { pipeline } = await import('https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2');
+
+let generator = null; // Будет GPT-модель
+
 const output = document.getElementById('output');
 const input = document.getElementById('cmd');
 const typeSound = document.getElementById('typeSound');
@@ -14,12 +19,23 @@ for (let i = 0; i < 3; i++) {
   document.querySelector('.terminal').appendChild(crack);
 }
 
+// Загружаем GPT-модель при старте (один раз)
+async function loadModel() {
+  try {
+    generator = await pipeline('text-generation', 'Xenova/distilgpt2');
+    typeLine("[SYSTEM] ИИ-бот загружен. Используй 'ai <вопрос>' для взлома разума.", 'success');
+  } catch (error) {
+    typeLine("[ERROR] Не удалось загрузить ИИ. Проверь интернет.", 'error');
+  }
+}
+
 // Приветствие
 typeLine("Добро пожаловать в АНОНИМНЫЙ ТЕРМИНАЛ v9.99");
 typeLine("Подключение к darknet... [OK]");
 typeLine("Аутентификация: GUEST MODE");
-typeLine("Введите сообщение или команду. Для помощи — 'help'");
+typeLine("ИИ-бот активирован: 'ai Привет, кто ты?'");
 typeLine("");
+loadModel(); // Запускаем загрузку
 
 // Обработка ввода
 input.addEventListener('keydown', (e) => {
@@ -60,6 +76,7 @@ function processCommand(cmd) {
   if (lower === 'help') {
     typeLine("Доступные команды:");
     typeLine("  msg <текст>  — отправить анонимное сообщение");
+    typeLine("  ai <вопрос>  — спросить у ИИ-бота (GPT-style)");
     typeLine("  clear        — очистить терминал");
     typeLine("  hack         — запустить симуляцию взлома");
     typeLine("  whoami       — кто ты?");
@@ -69,6 +86,16 @@ function processCommand(cmd) {
       typeLine(`[ANON] ${msg}`, 'msg');
       setTimeout(() => typeLine(`[SYSTEM] Сообщение доставлено в darknet.`, 'system'), 800);
     }
+  } else if (lower.startsWith('ai ')) {
+    const question = cmd.slice(3).trim();
+    if (question && generator) {
+      typeLine(`[ИИ] Обрабатываю запрос: "${question}"...`, 'system');
+      aiChat(question);
+    } else if (!generator) {
+      typeLine("[ERROR] ИИ не загружен. Подожди 10-20 сек.", 'error');
+    } else {
+      typeLine("[ERROR] Укажи вопрос после 'ai'.", 'error');
+    }
   } else if (lower === 'clear') {
     output.innerHTML = '';
   } else if (lower === 'hack') {
@@ -77,6 +104,22 @@ function processCommand(cmd) {
     typeLine("Вы — АНОНИМ. IP скрыт. Следов нет.");
   } else {
     typeLine(`bash: ${cmd}: команда не найдена. Введите 'help'`, 'error');
+  }
+}
+
+async function aiChat(question) {
+  try {
+    // Генерируем ответ (короткий, чтобы быстро)
+    const output = await generator(`Human: ${question}\nAI:`, {
+      max_new_tokens: 50, // Короткие ответы для скорости
+      temperature: 0.7,
+      do_sample: true
+    });
+    
+    const response = output[0].generated_text.split('AI:')[1]?.trim() || 'Не понял запрос.';
+    typeLine(`[ИИ] ${response}`, 'ai');
+  } catch (error) {
+    typeLine("[ИИ] Ошибка генерации. Попробуй проще.", 'error');
   }
 }
 
