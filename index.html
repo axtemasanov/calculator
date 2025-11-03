@@ -4,8 +4,208 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>TERMINAL CHAT</title>
-  <link rel="stylesheet" href="hacker.css"/>
   <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+  <style>
+    /* ВСТРОЕННЫЕ ХАКЕРСКИЕ СТИЛИ — ЧЁРНЫЙ ФОН, ЗЕЛЁНЫЙ НЕОН, ГЛЮКИ */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #000 !important;
+      color: #0f0 !important;
+      font-family: 'VT323', monospace;
+      overflow: hidden;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 10px;
+    }
+
+    .terminal {
+      width: 100%;
+      max-width: 900px;
+      height: 90vh;
+      background: #000 !important;
+      border: 2px solid #0f0;
+      border-radius: 8px;
+      box-shadow: 0 0 20px #0f0, 0 0 40px #0f0, inset 0 0 20px rgba(0,255,0,0.1);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      animation: glow 2s infinite alternate;
+    }
+
+    @keyframes glow {
+      0% { box-shadow: 0 0 20px #0f0, 0 0 40px #0f0; }
+      100% { box-shadow: 0 0 30px #0f0, 0 0 60px #0f0, 0 0 80px #0f0; }
+    }
+
+    .header {
+      background: #111;
+      padding: 10px 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #0f0;
+      flex-shrink: 0;
+      text-shadow: 0 0 5px #0f0;
+    }
+
+    .title { 
+      font-size: 1.2rem; 
+      letter-spacing: 1px; 
+      color: #0f0; 
+      text-shadow: 0 0 10px #0f0; 
+    }
+
+    .controls .dot {
+      width: 12px; height: 12px; border-radius: 50%; margin-left: 6px;
+      display: inline-block;
+      box-shadow: 0 0 8px currentColor;
+    }
+    .red { background: #f00; }
+    .yellow { background: #ff0; }
+    .green { background: #0f0; }
+
+    .output {
+      flex: 1;
+      padding: 15px;
+      overflow-y: auto;
+      line-height: 1.6;
+      font-size: 1.3rem;
+      min-height: 0;
+      background: rgba(0,0,0,0.8) !important;
+      color: #0f0 !important;
+    }
+    .output::-webkit-scrollbar { width: 8px; }
+    .output::-webkit-scrollbar-track { background: #000; }
+    .output::-webkit-scrollbar-thumb { background: #0f0; border-radius: 4px; box-shadow: 0 0 5px #0f0; }
+
+    .line { 
+      margin: 4px 0; 
+      opacity: 0; 
+      animation: fadeIn 0.3s s forwards; 
+      text-shadow: 0 0 3px #0f0; 
+      color: #0f0 !important;
+    }
+    @keyframes fadeIn { to { opacity: 1; } }
+
+    .input-line {
+      display: flex;
+      align-items: center;
+      padding: 10px 15px;
+      background: rgba(0,255,0,0.05);
+      border-top: 1px dashed #0f0;
+      flex-shrink: 0;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 1000;
+      box-shadow: 0 -2px 10px rgba(0,255,0,0.5);
+    }
+
+    .prompt { 
+      color: #0f0; 
+      margin-right: 8px; 
+      white-space: nowrap; 
+      text-shadow: 0 0 5px #0f0; 
+    }
+
+    #cmd {
+      background: transparent !important;
+      border: none;
+      color: #0f0 !important;
+      font-family: 'VT323', monospace;
+      font-size: 1.3rem;
+      flex: 1;
+      outline: none;
+      min-width: 0;
+      text-shadow: 0 0 3px #0f0;
+      padding: 5px;
+    }
+
+    .cursor { 
+      animation: blink 1s infinite; 
+      color: #0f0; 
+      margin-left: 2px; 
+      text-shadow: 0 0 5px #0f0; 
+    }
+    @keyframes blink { 0%,50% { opacity: 1; } 51%,100% { opacity: 0; } }
+
+    /* СООБЩЕНИЯ */
+    .line.ai { color: #0f0; text-shadow: 0 0 8px #0f0; font-style: italic; }
+    .line.success { color: #0f0; text-shadow: 0 0 5px #0f0; }
+    .line.error { color: #f00; text-shadow: 0 0 5px #f00; }
+    .line.msg { color: #ff0; text-shadow: 0 0 5px #ff0; }
+    .line.system { color: #888; }
+    .line.input { color: #0f0; text-shadow: 0 0 3px #0f0; }
+
+    /* CRT */
+    .terminal::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+      background: repeating-linear-gradient(0deg, rgba(0,0,0,0.15), rgba(0,0,0,0.15) 1px, transparent 1px, transparent 2px);
+      pointer-events: none; z-index: 1;
+      animation: scan 3s linear infinite;
+    }
+    @keyframes scan {
+      0% { background-position: 0 0; }
+      100% { background-position: 0 100vh; }
+    }
+
+    .terminal::after {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+      background: radial-gradient(circle at center, transparent 0%, rgba(0,255,0,0.05) 100%);
+      animation: flicker 0.15s infinite; pointer-events: none; z-index: 2;
+    }
+    @keyframes flicker { 0%,100% { opacity: 0.98; } 50% { opacity: 1; } }
+
+    /* ТРЕЩИНЫ */
+    .crack {
+      position: absolute; width: 3px; height: 100px;
+      background: linear-gradient(to bottom, #0f0, transparent);
+      transform: rotate(45deg); opacity: 0.3; pointer-events: none;
+      animation: crackle 5s infinite;
+    }
+    @keyframes crackle { 0%,100% { opacity: 0.1; } 50% { opacity: 0.5; transform: rotate(45deg) scale(1.1); } }
+
+    /* ПРОГРЕСС */
+    .progress-line { color: #0f0; animation: pulse 1s infinite; text-shadow: 0 0 5px #0f0; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    .thinking { color: #ff0; animation: blink 0.5s infinite; text-shadow: 0 0 5px #ff0; }
+    @keyframes blink { 0%, 50% { opacity: 1; } 51%, 100% { opacity: 0.3; } }
+    .streaming { color: #0f0; animation: type 0.1s infinite; text-shadow: 0 0 3px #0f0; }
+    @keyframes type { 0%, 100% { border-right: 2px solid #0f0; } 50% { border-right: none; } }
+    .bar { color: #0f0; text-shadow: 0 0 3px #0f0; }
+
+    /* КНОПКА ENTER */
+    .enter-btn {
+      background: #0f0;
+      color: #000;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-family: 'VT323', monospace;
+      font-size: 1rem;
+      box-shadow: 0 0 5px #0f0;
+      transition: all 0.2s;
+    }
+    .enter-btn:hover { background: #00ff00; box-shadow: 0 0 10px #0f0; }
+    .enter-btn.sending { background: #f00; animation: pulse-red 0.5s infinite; cursor: not-allowed; }
+    @keyframes pulse-red { 0%, 100% { box-shadow: 0 0 5px #f00; } 50% { box-shadow: 0 0 15px #f00; } }
+    .enter-btn.processing { background: #ff0; animation: blink 0.5s infinite; }
+    .enter-btn.done { background: #0f0; animation: glow 0.5s ease-out; }
+  
+    @media (max-width: 600px) {
+      .terminal { height: calc(100vh - env(safe-area-inset-bottom)); }
+      .output, #cmd { font-size: 1.1rem; }
+      .title { font-size: 1rem; }
+      .enter-btn { padding: 3px 8px; font-size: 0.9rem; }
+      body { padding-bottom: env(safe-area-inset-bottom); }
+    }
+  </style>
 </head>
 <body>
   <div class="terminal">
@@ -29,18 +229,137 @@
   </div>
 
   <audio id="typeSound" src="https://assets.mixkit.co/sfx/preview/mixkit-fast-keyboard-typing-2324.mp3" preload="auto"></audio>
-  <script src="hacker.js"></script>
   <script>
+    // Глобальные переменные
+    let generator = null;
+    let aiEnabled = false;
+    let history = [];
+    let historyIndex = -1;
+    const output = document.getElementById('output');
+    const input = document.getElementById('cmd');
+    const typeSound = document.getElementById('typeSound');
+    const enterBtn = document.querySelector('.enter-btn');
+    
+    // Функция отправки
     function sendCommand() {
-      const input = document.getElementById('cmd');
+      if (enterBtn.classList.contains('sending')) return;
+      
       const cmd = input.value.trim();
-      if (cmd) {
-        addLine(`guest@anon:~$ ${cmd}`, 'input');
-        processCommand(cmd);
-        history.unshift(cmd);
-        historyIndex = -1;
-      }
+      if (!cmd) return;
+      
+      enterBtn.textContent = 'Отправка...';
+      enterBtn.classList.add('sending');
+      enterBtn.disabled = true;
+      
+      addLine(`guest@anon:~$ ${cmd}`, 'input');
+      processCommand(cmd);
+      history.unshift(cmd);
+      historyIndex = -1;
       input.value = '';
+      
+      setTimeout(() => {
+        enterBtn.textContent = 'Enter';
+        enterBtn.classList.remove('sending');
+        enterBtn.disabled = false;
+      }, 2000);
+    }
+    
+    // processCommand
+    function processCommand(cmd) {
+      const lower = cmd.toLowerCase().trim();
+      
+      if (lower === 'help') {
+        enterBtn.textContent = 'Выполняю...';
+        enterBtn.classList.add('processing');
+        typeLine("msg <текст> — анонимка");
+        typeLine("hack — симуляция");
+        typeLine("clear — очистить");
+        typeLine("ai on — включить ИИ");
+        typeLine("ai <вопрос> — спросить");
+        setTimeout(() => enterBtn.classList.remove('processing'), 500);
+      } else if (lower === 'ai on') {
+        loadAI();
+        enterBtn.textContent = 'Загружается...';
+        enterBtn.classList.add('processing');
+      } else if (lower.startsWith('ai ')) {
+        const q = cmd.slice(3).trim();
+        if (!q) {
+          typeLine("Ошибка: вопрос?", 'error');
+          enterBtn.classList.remove('processing');
+          return;
+        }
+        if (!aiEnabled) {
+          typeLine("Сначала: ai on", 'error');
+          enterBtn.classList.remove('processing');
+          return;
+        }
+        
+        enterBtn.textContent = 'Думаю...';
+        enterBtn.classList.add('processing');
+        
+        let thinkingLine = addLine(`[AI] Думаю... [░░░░░░░░░░]`, 'thinking');
+        let dots = 0;
+        let barPos = 0;
+        const thinkingInterval = setInterval(() => {
+          dots = (dots + 1) % 4;
+          barPos = (barPos + 1) % 10;
+          const bar = '█'.repeat(barPos) + '░'.repeat(10 - barPos);
+          thinkingLine.textContent = `[AI] Думаю${'.'.repeat(dots)} [${bar}]`;
+          scrollToBottom();
+        }, 500);
+
+        generateAI(q, thinkingInterval, thinkingLine);
+      } else if (lower.startsWith('msg ')) {
+        enterBtn.textContent = 'Отправляю...';
+        enterBtn.classList.add('processing');
+        typeLine(`[ANON] ${cmd.slice(4)}`, 'msg');
+        setTimeout(() => enterBtn.classList.remove('processing'), 500);
+      } else if (lower === 'clear') {
+        enterBtn.textContent = 'Очищаю...';
+        enterBtn.classList.add('processing');
+        output.innerHTML = '';
+        setTimeout(() => enterBtn.classList.remove('processing'), 300);
+      } else if (lower === 'hack') {
+        enterBtn.textContent = 'Взламываю...';
+        enterBtn.classList.add('processing');
+        hackSimulation();
+      } else {
+        enterBtn.textContent = 'Ошибка...';
+        enterBtn.classList.add('sending');
+        typeLine(`bash: ${cmd}: не найдено`, 'error');
+        setTimeout(() => enterBtn.classList.remove('sending'), 1000);
+      }
+    }
+    
+    // loadAI, generateAI, streamResponse, typeLine, addLine, scrollToBottom, hackSimulation — как в предыдущем коде (копируй оттуда, чтобы не повторять)
+    
+    // Приветствие (при загрузке)
+    typeLine("Добро пожаловать в АНОНИМНЫЙ ТЕРМИНАЛ v9.99");
+    typeLine("Подключение к darknet... [OK]");
+    typeLine("Аутентификация: GUEST MODE");
+    typeLine("Команды: help, msg, hack, clear, ai on");
+    typeLine("");
+    
+    // Эффекты (трещины)
+    const terminal = document.querySelector('.terminal');
+    if (terminal) {
+      for (let i = 0; i < 5; i++) {
+        const crack = document.createElement('div');
+        crack.className = 'crack';
+        crack.style.left = Math.random() * 100 + '%';
+        crack.style.top = Math.random() * 100 + '%';
+        terminal.appendChild(crack);
+      }
+    }
+    
+    // Клавиатура (fallback для Enter)
+    if (input) {
+      input.addEventListener('keydown', e => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          sendCommand();
+        }
+      });
     }
   </script>
 </body>
