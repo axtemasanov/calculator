@@ -1,4 +1,4 @@
-// === УМНЫЙ РУССКИЙ ИИ (RUGPT-3 SMALL + FIXED PROMPT) ===
+// === УМНЫЙ РУССКИЙ ИИ (RUGPT-3 SMALL + FEW-SHOT PROMPT) ===
 let generator = null;
 let aiEnabled = false;
 let retryCount = 0;
@@ -190,22 +190,37 @@ function processCommand(cmd) {
   }
 }
 
-// generateAI (усиленный промпт)
+// generateAI (усиленный промпт с few-shot для логики)
 async function generateAI(q, thinkingInterval, thinkingLine) {
   try {
-    const prompt = `Ты — умный хакерский ассистент в терминале. Отвечай на русском, кратко, логично, подробно, но без повторения вопроса или текста. Будь полезным, как напарник в darknet. Не спамь, не галлюцинируй, отвечай на основе вопроса. Пример: Q: Что ты умеешь? A: Я умею генерировать код, считать математику, взламывать симуляции, отвечать на вопросы по киберу. Давай взломаем? Q: ${q}\nA:`; 
+    // Few-shot: Примеры "учат" модель отвечать без повторения
+    const prompt = `Ты — умный хакерский ассистент. Отвечай на русском, кратко, логично, подробно, без повторения вопроса. Будь полезным напарником.  
+Q: Что ты умеешь? A: Я генерирую код, считаю математику, взламываю симуляции, отвечаю на вопросы по киберу. Давай взломаем?  
+Q: Как взломать WiFi? A: Используй aircrack-ng: 1. airodump-ng wlan0 для скана. 2. airocrack-ng -w wordlist -b BSSID capture.cap для brute-force. Будь осторожен, это нелегально.  
+Q: ${q}\nA:`; // Few-shot: 2 примера "учат" не повторять
     const res = await generator(prompt, { 
       max_new_tokens: 150,
       temperature: 0.7,
       top_p: 0.9,
       do_sample: true,
-      repetition_penalty: 1.4
+      repetition_penalty: 1.5, // Ещё сильнее
+      pad_token_id: generator.tokenizer.eos_token_id // Конец предложения
     });
     let ans = res[0].generated_text.split('A:')[1]?.trim() || "Не понял.";
     
-    // Post-processing: Удаляем повторения и обрезаем
-    ans = ans.replace(/(\b\w+\b)(?=\s+\1)/g, '');
+    // Улучшенный парсинг: Если 'A:' не нашлось, берём после \n
+    if (!ans) {
+      ans = res[0].generated_text.split('\n')[res[0].generated_text.split('\n').length - 1].trim();
+    }
+    
+    // Post-processing: Удаляем вопрос, повторения, обрезаем
+    ans = ans.replace(new RegExp(q, 'i'), ''); // Удаляем вопрос (case-insensitive)
+    ans = ans.replace(/(\b\w+\b)(?=\s+\1)/g, ''); // Удаляем повторяющиеся слова
     ans = ans.substring(0, 300) + (ans.length > 300 ? '...' : '');
+    
+    if (ans.startsWith('?') || ans.includes(lower)) { // Если всё равно эхо — добавляем префикс
+      ans = "Ответ: " + ans;
+    }
     
     clearInterval(thinkingInterval);
     output.removeChild(thinkingLine);
@@ -218,7 +233,7 @@ async function generateAI(q, thinkingInterval, thinkingLine) {
   }
 }
 
-// Остальные функции (streamResponse, typeLine, addLine, scrollToBottom, hackSimulation) — как раньше
+// Остальные функции (streamResponse, typeLine, addLine, scrollToBottom, hackSimulation) — как раньше (не меняй)
 function streamResponse(text, type = '') {
   const line = document.createElement('div');
   line.className = `line ${type} streaming`;
