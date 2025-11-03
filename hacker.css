@@ -1,48 +1,35 @@
-/* АДАПТАЦИЯ ПОД МОБИЛЬНЫЙ (поле ввода всегда видно) */
-.input-line {
-  display: flex;
-  align-items: center;
-  padding: 10px 15px;
-  background: rgba(0,255,0,0.05);
-  border-top: 1px dashed #0f0;
-  flex-shrink: 0;
-  position: fixed; /* Фиксируем внизу экрана */
-  bottom: 0;
-  left: 0;
-  right: 0;
-  z-index: 1000; /* Выше всего */
-  padding-bottom: env(safe-area-inset-bottom); /* Учёт тулбара/нотификаций */
-  box-shadow: 0 -2px 10px rgba(0,255,0,0.5); /* Тень сверху для стиля */
-}
-
-#cmd {
-  background: transparent;
+/* СТИЛИ ДЛЯ КНОПКИ ENTER С ПРОГРЕССОМ */
+.enter-btn {
+  background: #0f0;
+  color: #000;
   border: none;
-  color: #0f0;
+  padding: 5px 10px;
+  border-radius: 5px;
+  cursor: pointer;
   font-family: 'VT323', monospace;
-  font-size: 1.3rem;
-  flex: 1;
-  outline: none;
-  min-width: 0;
-  padding: 5px; /* Отступ внутри поля */
+  font-size: 1rem;
+  box-shadow: 0 0 5px #0f0;
+  transition: all 0.2s;
+  animation: none; /* По умолчанию */
 }
 
-/* Корректировка высоты терминала для мобильного */
-@media (max-width: 600px) {
-  .terminal {
-    height: calc(100dvh - env(safe-area-inset-bottom)); /* Динамическая высота минус тулбар */
-    padding-bottom: env(safe-area-inset-bottom); /* Отступ снизу */
-  }
-  .output {
-    padding-bottom: env(safe-area-inset-bottom); /* Скролл учитывает тулбар */
-  }
-  .enter-btn {
-    padding: 5px 10px;
-    font-size: 1rem;
-  }
+.enter-btn.sending {
+  background: #f00; /* Красный при отправке */
+  animation: pulse-red 0.5s infinite; /* Мигает красным */
+  cursor: not-allowed; /* Отключена */
 }
 
-/* Общий фикс для всех устройств */
-body {
-  padding-bottom: env(safe-area-inset-bottom); /* Глобальный отступ снизу */
+@keyframes pulse-red {
+  0%, 100% { box-shadow: 0 0 5px #f00; }
+  50% { box-shadow: 0 0 15px #f00; }
+}
+
+.enter-btn.processing {
+  background: #ff0; /* Жёлтый при обработке */
+  animation: blink 0.5s infinite;
+}
+
+.enter-btn.done {
+  background: #0f0; /* Зелёный при завершении */
+  animation: glow 0.5s ease-out;
 }
