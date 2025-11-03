@@ -1,11 +1,121 @@
-.line.ai { 
-  color: #00ff00; 
-  text-shadow: 0 0 5px #0f0; 
-  font-style: italic; 
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: #000;
+  color: #0f0;
+  font-family: 'VT323', monospace;
+  overflow: hidden;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 10px;
 }
 
+.terminal {
+  width: 100%;
+  max-width: 900px;
+  height: 90vh;
+  background: #000;
+  border: 2px solid #0f0;
+  border-radius: 8px;
+  box-shadow: 0 0 20px #0f0, 0 0 40px #0f0, inset 0 0 20px rgba(0,255,0,0.1);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  background: #111;
+  padding: 10px 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #0f0;
+  flex-shrink: 0;
+}
+
+.title { font-size: 1.2rem; letter-spacing: 1px; }
+
+.controls .dot {
+  width: 12px; height: 12px; border-radius: 50%; margin-left: 6px;
+  display: inline-block;
+}
+.red { background: #f00; box-shadow: 0 0 8px #f00; }
+.yellow { background: #ff0; box-shadow: 0 0 8px #ff0; }
+.green { background: #0f0; box-shadow: 0 0 8px #0f0; }
+
+.output {
+  flex: 1;
+  padding: 15px;
+  overflow-y: auto;
+  line-height: 1.6;
+  font-size: 1.3rem;
+  min-height: 0;
+}
+.output::-webkit-scrollbar { width: 8px; }
+.output::-webkit-scrollbar-track { background: #000; }
+.output::-webkit-scrollbar-thumb { background: #0f0; border-radius: 4px; }
+
+.line { margin: 4px 0; opacity: 0; animation: fadeIn 0.3s forwards; }
+@keyframes fadeIn { to { opacity: 1; } }
+
+.input-line {
+  display: flex;
+  align-items: center;
+  padding: 10px 15px;
+  background: rgba(0,255,0,0.05);
+  border-top: 1px dashed #0f0;
+  flex-shrink: 0;
+}
+
+.prompt { color: #0f0; margin-right: 8px; white-space: nowrap; }
+#cmd {
+  background: transparent;
+  border: none;
+  color: #0f0;
+  font-family: 'VT323', monospace;
+  font-size: 1.3rem;
+  flex: 1;
+  outline: none;
+  min-width: 0;
+}
+.cursor { animation: blink 1s infinite; color: #0f0; margin-left: 2px; }
+@keyframes blink { 0%,50% { opacity: 1; } 51%,100% { opacity: 0; } }
+
+/* СТИЛИ ДЛЯ СООБЩЕНИЙ */
+.line.ai { color: #0f0; text-shadow: 0 0 8px #0f0; font-style: italic; }
 .line.success { color: #0f0; }
 .line.error { color: #f00; }
 .line.msg { color: #ff0; }
 .line.system { color: #888; }
 .line.input { color: #0f0; }
+
+/* CRT ЭФФЕКТ */
+.terminal::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  background: repeating-linear-gradient(0deg, rgba(0,0,0,0.15), rgba(0,0,0,0.15) 1px, transparent 1px, transparent 2px);
+  pointer-events: none; z-index: 1;
+}
+.terminal::after {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  background: radial-gradient(circle at center, transparent 0%, rgba(0,255,0,0.03) 100%);
+  animation: flicker 3s infinite; pointer-events: none; z-index: 2;
+}
+@keyframes flicker { 0%,100% { opacity: 0.98; } 50% { opacity: 1; } }
+
+/* ТРЕЩИНЫ */
+.crack {
+  position: absolute; width: 3px; height: 100px;
+  background: linear-gradient(to bottom, #0f0, transparent);
+  transform: rotate(45deg); opacity: 0.3; pointer-events: none;
+  animation: crackle 5s infinite;
+}
+@keyframes crackle { 0%,100% { opacity: 0.1; } 50% { opacity: 0.4; } }
+
+@media (max-width: 600px) {
+  .terminal { height: 95vh; }
+  .output, #cmd { font-size: 1.1rem; }
+  .title { font-size: 1rem; }
+}
