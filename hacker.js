@@ -1,14 +1,4 @@
-let generator = null;
-const loadModel = async () => {
-  try {
-    const { pipeline } = await import('https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2');
-    generator = await pipeline('text-generation', 'Xenova/distilgpt2');
-    typeLine("[AI] Готов. Введи: ai <вопрос>", 'success');
-  } catch (e) {
-    typeLine("[ERROR] ИИ не загрузился.", 'error');
-  }
-};
-
+// === ПРОСТОЙ ХАКЕРСКИЙ ЧАТ БЕЗ ОШИБОК ===
 const output = document.getElementById('output');
 const input = document.getElementById('cmd');
 const typeSound = document.getElementById('typeSound');
@@ -27,9 +17,9 @@ for (let i = 0; i < 3; i++) {
 // Приветствие
 typeLine("Добро пожаловать в АНОНИМНЫЙ ТЕРМИНАЛ v9.99");
 typeLine("Подключение к darknet... [OK]");
-typeLine("ИИ-бот: ai Привет");
+typeLine("Аутентификация: GUEST MODE");
+typeLine("Команды: help, msg, hack, clear");
 typeLine("");
-loadModel();
 
 // Ввод
 input.addEventListener('keydown', e => {
@@ -57,26 +47,17 @@ input.addEventListener('keydown', e => {
 function processCommand(cmd) {
   const lower = cmd.toLowerCase();
   if (lower === 'help') {
-    typeLine("Команды: msg, ai, hack, clear, whoami");
-  } else if (lower.startsWith('ai ')) {
-    const q = cmd.slice(3).trim();
-    if (!q) { typeLine("Ошибка: вопрос?", 'error'); return; }
-    if (!generator) { typeLine("ИИ загружается...", 'system'); return; }
-    typeLine(`[AI] Думаю...`, 'system');
-    generateAI(q);
-  } else if (lower === 'clear') output.innerHTML = '';
-  else if (lower === 'hack') hackSimulation();
-  else if (lower === 'whoami') typeLine("Ты — АНОНИМ.");
-  else typeLine(`bash: ${cmd}: не найдено`, 'error');
-}
-
-async function generateAI(q) {
-  try {
-    const res = await generator(`Q: ${q}\nA:`, { max_new_tokens: 50 });
-    const ans = res[0].generated_text.split('A:')[1]?.trim() || "Не знаю.";
-    typeLine(`[AI] ${ans}`, 'ai');
-  } catch (e) {
-    typeLine("[AI] Ошибка.", 'error');
+    typeLine("msg <текст> — анонимка");
+    typeLine("hack — симуляция взлома");
+    typeLine("clear — очистить");
+  } else if (lower.startsWith('msg ')) {
+    typeLine(`[ANON] ${cmd.slice(4)}`, 'msg');
+  } else if (lower === 'clear') {
+    output.innerHTML = '';
+  } else if (lower === 'hack') {
+    hackSimulation();
+  } else {
+    typeLine(`bash: ${cmd}: команда не найдена`, 'error');
   }
 }
 
@@ -105,6 +86,11 @@ function addLine(text, type = '') {
 function hackSimulation() {
   const steps = ["Сканирую...", "Взлом...", "УСПЕХ!"];
   let i = 0;
-  const run = () => { if (i < steps.length) { typeLine(steps[i++], i === steps.length ? 'success' : ''); setTimeout(run, 1000); } };
+  const run = () => { 
+    if (i < steps.length) { 
+      typeLine(steps[i++], i === steps.length ? 'success' : ''); 
+      setTimeout(run, 1000); 
+    } 
+  };
   run();
 }
