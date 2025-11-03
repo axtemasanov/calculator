@@ -1,8 +1,8 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
-  background: #000;
-  color: #0f0;
+  background: #000 !important; /* Чёрный фон, принудительно */
+  color: #0f0 !important; /* Зелёный текст */
   font-family: 'VT323', monospace;
   overflow: hidden;
   height: 100vh;
@@ -16,7 +16,7 @@ body {
   width: 100%;
   max-width: 900px;
   height: 90vh;
-  background: #000;
+  background: #000 !important; /* Чёрный корпус */
   border: 2px solid #0f0;
   border-radius: 8px;
   box-shadow: 
@@ -44,10 +44,15 @@ body {
   align-items: center;
   border-bottom: 1px solid #0f0;
   flex-shrink: 0;
-  text-shadow: 0 0 5px #0f0; /* Свечение заголовка */
+  text-shadow: 0 0 5px #0f0;
 }
 
-.title { font-size: 1.2rem; letter-spacing: 1px; color: #0f0; text-shadow: 0 0 10px #0f0; }
+.title { 
+  font-size: 1.2rem; 
+  letter-spacing: 1px; 
+  color: #0f0; 
+  text-shadow: 0 0 10px #0f0; 
+}
 
 .controls .dot {
   width: 12px; height: 12px; border-radius: 50%; margin-left: 6px;
@@ -65,13 +70,20 @@ body {
   line-height: 1.6;
   font-size: 1.3rem;
   min-height: 0;
-  background: rgba(0,0,0,0.8);
+  background: rgba(0,0,0,0.8) !important; /* Тёмный фон для текста */
+  color: #0f0 !important; /* Зелёный текст везде */
 }
 .output::-webkit-scrollbar { width: 8px; }
 .output::-webkit-scrollbar-track { background: #000; }
 .output::-webkit-scrollbar-thumb { background: #0f0; border-radius: 4px; box-shadow: 0 0 5px #0f0; }
 
-.line { margin: 4px 0; opacity: 0; animation: fadeIn 0.3s forwards; text-shadow: 0 0 3px #0f0; }
+.line { 
+  margin: 4px 0; 
+  opacity: 0; 
+  animation: fadeIn 0.3s forwards; 
+  text-shadow: 0 0 3px #0f0; 
+  color: #0f0 !important; /* Зелёный для всех линий */
+}
 @keyframes fadeIn { to { opacity: 1; } }
 
 .input-line {
@@ -83,11 +95,16 @@ body {
   flex-shrink: 0;
 }
 
-.prompt { color: #0f0; margin-right: 8px; white-space: nowrap; text-shadow: 0 0 5px #0f0; }
+.prompt { 
+  color: #0f0; 
+  margin-right: 8px; 
+  white-space: nowrap; 
+  text-shadow: 0 0 5px #0f0; 
+}
 #cmd {
   background: transparent;
   border: none;
-  color: #0f0;
+  color: #0f0 !important;
   font-family: 'VT323', monospace;
   font-size: 1.3rem;
   flex: 1;
@@ -95,7 +112,12 @@ body {
   min-width: 0;
   text-shadow: 0 0 3px #0f0;
 }
-.cursor { animation: blink 1s infinite; color: #0f0; margin-left: 2px; text-shadow: 0 0 5px #0f0; }
+.cursor { 
+  animation: blink 1s infinite; 
+  color: #0f0; 
+  margin-left: 2px; 
+  text-shadow: 0 0 5px #0f0; 
+}
 @keyframes blink { 0%,50% { opacity: 1; } 51%,100% { opacity: 0; } }
 
 /* СТИЛИ ДЛЯ СООБЩЕНИЙ */
@@ -106,14 +128,13 @@ body {
 .line.system { color: #888; }
 .line.input { color: #0f0; text-shadow: 0 0 3px #0f0; }
 
-/* CRT + ГЛЮКИ (усилено) */
+/* CRT + ГЛЮКИ */
 .terminal::before {
   content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
   background: repeating-linear-gradient(0deg, rgba(0,0,0,0.15), rgba(0,0,0,0.15) 1px, transparent 1px, transparent 2px);
   pointer-events: none; z-index: 1;
-  animation: scan 3s linear infinite; /* Линия сканирования */
+  animation: scan 3s linear infinite;
 }
-
 @keyframes scan {
   0% { background-position: 0 0; }
   100% { background-position: 0 100vh; }
@@ -126,7 +147,7 @@ body {
 }
 @keyframes flicker { 0%,100% { opacity: 0.98; } 50% { opacity: 1; } }
 
-/* ТРЕЩИНЫ (больше и динамичнее) */
+/* ТРЕЩИНЫ */
 .crack {
   position: absolute; width: 3px; height: 100px;
   background: linear-gradient(to bottom, #0f0, transparent);
@@ -134,14 +155,6 @@ body {
   animation: crackle 5s infinite;
 }
 @keyframes crackle { 0%,100% { opacity: 0.1; } 50% { opacity: 0.5; transform: rotate(45deg) scale(1.1); } }
-
-for (let i = 0; i < 5; i++) { // Добавь 5 трещин в JS
-  const crack = document.createElement('div');
-  crack.className = 'crack';
-  crack.style.left = Math.random() * 100 + '%';
-  crack.style.top = Math.random() * 100 + '%';
-  document.querySelector('.terminal').appendChild(crack);
-}
 
 /* ПРОГРЕСС И ПОТОК */
 .progress-line { color: #0f0; animation: pulse 1s infinite; text-shadow: 0 0 5px #0f0; }
