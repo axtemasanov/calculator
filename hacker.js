@@ -1,4 +1,4 @@
-// === МОЩНЫЙ ИИ В БРАУЗЕРЕ (GPT-NEO-125M + SMART PROMPT) ===
+// === СУПЕР МОЩНЫЙ ИИ В БРАУЗЕРЕ (GPT-2 MEDIUM) ===
 let generator = null;
 let aiEnabled = false;
 let retryCount = 0;
@@ -19,15 +19,15 @@ const loadAI = async () => {
   let progressLine = addLine("[AI] Загрузка модели... [░░░░░░░░░░] 0%", 'progress-line');
   let progress = 0;
   const progressInterval = setInterval(() => {
-    progress += Math.random() * 20;
+    progress += Math.random() * 15; // Медленнее прогресс для большой модели
     if (progress > 100) progress = 100;
     updateProgressBar(progressLine, progress, "Загрузка модели...");
     if (progress >= 100) clearInterval(progressInterval);
-  }, 2000);
+  }, 2500);
 
   try {
     const { pipeline } = await import('https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2');
-    generator = await pipeline('text-generation', 'Xenova/gpt-neo-125m');
+    generator = await pipeline('text-generation', 'Xenova/gpt2-medium'); // <- GPT-2 MEDIUM — 355M, мощнее, умнее!
     aiEnabled = true;
     retryCount = 0;
     clearInterval(progressInterval);
@@ -38,7 +38,7 @@ const loadAI = async () => {
     retryCount++;
     if (retryCount < MAX_RETRIES) {
       updateProgressBar(progressLine, 0, "[AI] Ошибка — перезагрузка... (" + retryCount + "/" + MAX_RETRIES + ")");
-      setTimeout(() => loadAI(), 3000);
+      setTimeout(() => loadAI(), 4000);
     } else {
       updateProgressBar(progressLine, 0, "[AI] Ошибка. Проверь интернет или перезагрузи страницу.");
       progressLine.className = 'line error';
@@ -57,6 +57,7 @@ function updateProgressBar(line, percent, text) {
 // === ОСНОВНОЙ КОД ===
 const output = document.getElementById('output');
 const input = document.getElementById('cmd');
+const typeSound = document.getElementById('typeSound');
 let history = [], historyIndex = -1;
 
 // Эффекты
@@ -120,7 +121,7 @@ function sendCommand() {
     enterBtn.textContent = 'Enter';
     enterBtn.classList.remove('sending', 'processing');
     enterBtn.disabled = false;
-  }, 4000);
+  }, 6000); // 6 сек — для medium-модели
 }
 
 function processCommand(cmd) {
@@ -133,7 +134,7 @@ function processCommand(cmd) {
     typeLine("hack — симуляция");
     typeLine("clear — очистить");
     typeLine("ai on — включить ИИ");
-    typeLine("ai <вопрос> — спросить (теперь умнее!)");
+    typeLine("ai <вопрос> — спросить (теперь мощнее!)");
     setTimeout(() => enterBtn.classList.remove('processing'), 500);
   } else if (lower === 'ai on') {
     loadAI();
@@ -164,7 +165,7 @@ function processCommand(cmd) {
       const bar = '█'.repeat(barPos) + '░'.repeat(10 - barPos);
       thinkingLine.textContent = `[AI] Думаю${'.'.repeat(dots)} [${bar}]`;
       scrollToBottom();
-    }, 500);
+    }, 600);
 
     generateAI(q, thinkingInterval, thinkingLine);
   } else if (lower.startsWith('msg ')) {
@@ -189,22 +190,23 @@ function processCommand(cmd) {
   }
 }
 
-// generateAI (улучшенный промпт для "умности")
+// generateAI (усиленный промпт)
 async function generateAI(q, thinkingInterval, thinkingLine) {
   try {
-    const prompt = `You are a helpful hacker AI assistant. Answer concisely and intelligently in Russian. Q: ${q}\nA:`; // Системный промпт для coherentности
+    const prompt = `Ты — умный хакерский ассистент в терминале. Отвечай кратко, логично, подробно, но без повторений вопроса или текста. Используй русский язык, будь полезным, как напарник в darknet. Не спамь, не галлюцинируй, отвечай на основе вопроса. Q: ${q}\nA:`; // Ещё сильнее — "без повторений вопроса или текста"
     const res = await generator(prompt, { 
-      max_new_tokens: 100, 
-      temperature: 0.8, // Креативность без бреда
-      top_p: 0.9, // Фильтр coherentности
+      max_new_tokens: 120,
+      temperature: 0.7, // Меньше креативности, больше логики
+      top_p: 0.85,
       do_sample: true,
-      repetition_penalty: 1.1 // Штраф за повторения
+      repetition_penalty: 1.3 // Максимальный штраф за повторы
     });
     let ans = res[0].generated_text.split('A:')[1]?.trim() || "Не понял.";
     
-    // Post-processing: Удаляем повторения и обрезаем до 150 символов для краткости
+    // Post-processing: Удаляем повторения и обрезаем
     ans = ans.replace(/(\b\w+\b)(?=\s+\1)/g, ''); // Удаляем повторяющиеся слова
-    ans = ans.substring(0, 150) + (ans.length > 150 ? '...' : '');
+    ans = ans.replace(q, ''); // Удаляем вопрос, если он просочился
+    ans = ans.substring(0, 250) + (ans.length > 250 ? '...' : ''); // Обрезаем до 250 символов
     
     clearInterval(thinkingInterval);
     output.removeChild(thinkingLine);
@@ -217,7 +219,9 @@ async function generateAI(q, thinkingInterval, thinkingLine) {
   }
 }
 
-// Остальные функции (streamResponse, typeLine, addLine, scrollToBottom, hackSimulation) — как в предыдущем (не меняй)
+// Остальные функции (streamResponse, typeLine, addLine, scrollToBottom, hackSimulation) — как раньше
+// (копируй из предыдущего, если нужно — они не изменились)
+
 function streamResponse(text, type = '') {
   const line = document.createElement('div');
   line.className = `line ${type} streaming`;
@@ -282,3 +286,5 @@ typeLine("Подключение к darknet... [OK]");
 typeLine("Аутентификация: GUEST MODE");
 typeLine("Команды: help, msg, hack, clear, ai on");
 typeLine("");
+
+loadAI(); // Автозагрузка
