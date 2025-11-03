@@ -24,10 +24,33 @@
       <span class="prompt">guest@anon:~$</span>
       <input type="text" id="cmd" autocomplete="off" autofocus placeholder="введи команду..." />
       <span class="cursor">█</span>
+      <button class="enter-btn" onclick="sendCommand()">Enter</button>
     </div>
   </div>
 
   <audio id="typeSound" src="https://assets.mixkit.co/sfx/preview/mixkit-fast-keyboard-typing-2324.mp3" preload="auto"></audio>
   <script src="hacker.js"></script>
+  <script>
+    function sendCommand() {
+      const input = document.getElementById('cmd');
+      const cmd = input.value.trim();
+      if (cmd) {
+        const addLine = (text, type = '') => {
+          const line = document.createElement('div');
+          line.className = `line ${type}`;
+          line.textContent = text;
+          const output = document.getElementById('output');
+          output.appendChild(line);
+          output.scrollTop = output.scrollHeight;
+        };
+        addLine(`guest@anon:~$ ${cmd}`, 'input');
+        // Вызов processCommand из hacker.js
+        window.processCommand(cmd); // Делаем processCommand глобальной
+        history.unshift(cmd);
+        historyIndex = -1;
+      }
+      input.value = '';
+    }
+  </script>
 </body>
 </html>
