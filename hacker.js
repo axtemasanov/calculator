@@ -1,4 +1,4 @@
-// === СУПЕР МОЩНЫЙ ИИ (GPT-2 LARGE) ===
+// === УМНЫЙ РУССКИЙ ИИ (RUGPT-3 SMALL + ANTI-LOOP FIX) ===
 let generator = null;
 let aiEnabled = false;
 let retryCount = 0;
@@ -19,15 +19,15 @@ const loadAI = async () => {
   let progressLine = addLine("[AI] Загрузка модели... [░░░░░░░░░░] 0%", 'progress-line');
   let progress = 0;
   const progressInterval = setInterval(() => {
-    progress += Math.random() * 10; // Медленнее для большой модели
+    progress += Math.random() * 20;
     if (progress > 100) progress = 100;
     updateProgressBar(progressLine, progress, "Загрузка модели...");
     if (progress >= 100) clearInterval(progressInterval);
-  }, 3000);
+  }, 2000);
 
   try {
     const { pipeline } = await import('https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2');
-    generator = await pipeline('text-generation', 'Xenova/gpt2-large'); // <- GPT-2 LARGE — 774M, супермощная, умнее в разы!
+    generator = await pipeline('text-generation', 'Xenova/sberbank-ai/rugpt3small_based_on_gpt2');
     aiEnabled = true;
     retryCount = 0;
     clearInterval(progressInterval);
@@ -38,7 +38,7 @@ const loadAI = async () => {
     retryCount++;
     if (retryCount < MAX_RETRIES) {
       updateProgressBar(progressLine, 0, "[AI] Ошибка — перезагрузка... (" + retryCount + "/" + MAX_RETRIES + ")");
-      setTimeout(() => loadAI(), 5000);
+      setTimeout(() => loadAI(), 3000);
     } else {
       updateProgressBar(progressLine, 0, "[AI] Ошибка. Проверь интернет или перезагрузи страницу.");
       progressLine.className = 'line error';
@@ -121,7 +121,7 @@ function sendCommand() {
     enterBtn.textContent = 'Enter';
     enterBtn.classList.remove('sending', 'processing');
     enterBtn.disabled = false;
-  }, 6000); // 6 сек для large
+  }, 4000);
 }
 
 function processCommand(cmd) {
@@ -134,7 +134,7 @@ function processCommand(cmd) {
     typeLine("hack — симуляция");
     typeLine("clear — очистить");
     typeLine("ai on — включить ИИ");
-    typeLine("ai <вопрос> — спросить (теперь мощнее!)");
+    typeLine("ai <вопрос> — спросить (теперь без эха!)");
     setTimeout(() => enterBtn.classList.remove('processing'), 500);
   } else if (lower === 'ai on') {
     loadAI();
@@ -163,9 +163,9 @@ function processCommand(cmd) {
       dots = (dots + 1) % 4;
       barPos = (barPos + 1) % 10;
       const bar = '█'.repeat(barPos) + '░'.repeat(10 - barPos);
-      thinkingLine.textContent = `[AI] Думаю${'.'.repeat(dots)} [${bar}]`;
+      thinkingLine.textContent = `[AI] Думаю${'.' .repeat(dots)} [${bar}]`;
       scrollToBottom();
-    }, 600);
+    }, 500);
 
     generateAI(q, thinkingInterval, thinkingLine);
   } else if (lower.startsWith('msg ')) {
@@ -190,28 +190,29 @@ function processCommand(cmd) {
   }
 }
 
-// generateAI (новый подход — simple continuation)
+// generateAI (новый подход — simple continuation без Q:A)
 async function generateAI(q, thinkingInterval, thinkingLine) {
   try {
-    // Simple continuation: Начинаем с "Ответ: " + вопрос, модель продолжает как ответ
-    const prompt = `Ответ на вопрос "${q}":`; // Простой, чтобы модель "продолжала" ответ
+    // Simple continuation: "Ответ на '${q}': " — модель продолжает как ответ, без "Q:A" шаблона
+    const prompt = `Ответ на '${q}':`;
     const res = await generator(prompt, { 
       max_new_tokens: 150,
-      temperature: 0.8,
-      top_p: 0.9,
+      temperature: 0.9, // Больше разнообразия
+      top_k: 50, // Фильтр топ-50 токенов
+      top_p: 0.95,
       do_sample: true,
-      repetition_penalty: 2.0,
-      no_repeat_ngram_size: 3,
+      repetition_penalty: 2.0, // Жёстко режет повторы
+      no_repeat_ngram_size: 4, // Не повторять 4-граммы (длинные фразы)
       pad_token_id: generator.tokenizer.eos_token_id
     });
-    let ans = res[0].generated_text.trim();
+    let ans = res[0].generated_text.split(`Ответ на '${q}':`)[1]?.trim() || res[0].generated_text.trim();
     
-    // Fallback: Берём всё после "Ответ на вопрос"
-    if (ans.includes('Ответ на вопрос')) {
-      ans = ans.split('Ответ на вопрос')[1].trim();
+    // Fallback: Если не нашлось, берём всё после ':'
+    if (!ans) {
+      ans = res[0].generated_text.split(':')[1]?.trim() || "Не понял.";
     }
     
-    // Post-processing
+    // Post-processing: Удаляем вопрос, повторения
     ans = ans.replace(new RegExp(q, 'i'), '').trim();
     ans = ans.replace(/(\b\w+\b)(?=\s+\1)/g, '');
     if (ans.length < 10) ans = "Я — хакерский ассистент. Умею генерировать код, считать математику, взламывать симуляции, отвечать на вопросы по киберу. Что взломаем?";
