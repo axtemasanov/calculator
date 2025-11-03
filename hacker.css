@@ -9,13 +9,13 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  image-rendering: pixelated;
+  padding: 10px; /* ДОБАВИЛ отступы по краям */
 }
 
 .terminal {
-  width: 90%;
-  max-width: 800px;
-  height: 80vh;
+  width: 100%;
+  max-width: 900px;
+  height: 90vh;
   background: #000;
   border: 2px solid #0f0;
   border-radius: 8px;
@@ -25,19 +25,22 @@ body {
     inset 0 0 20px rgba(0,255,0,0.1);
   position: relative;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .header {
   background: #111;
-  padding: 8px 12px;
+  padding: 10px 15px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   border-bottom: 1px solid #0f0;
+  flex-shrink: 0;
 }
 
 .title {
-  font-size: 1.1rem;
+  font-size: 1.2rem;
   letter-spacing: 1px;
 }
 
@@ -54,11 +57,12 @@ body {
 .green  { background: #0f0; box-shadow: 0 0 8px #0f0; }
 
 .output {
+  flex: 1;
   padding: 15px;
-  height: calc(100% - 90px);
   overflow-y: auto;
   line-height: 1.6;
   font-size: 1.3rem;
+  min-height: 0; /* ВАЖНО для flex */
 }
 
 .output::-webkit-scrollbar { width: 8px; }
@@ -78,14 +82,16 @@ body {
 .input-line {
   display: flex;
   align-items: center;
-  padding: 0 15px;
+  padding: 10px 15px;
   background: rgba(0,255,0,0.05);
   border-top: 1px dashed #0f0;
+  flex-shrink: 0;
 }
 
 .prompt {
   color: #0f0;
   margin-right: 8px;
+  white-space: nowrap;
 }
 
 #cmd {
@@ -96,6 +102,7 @@ body {
   font-size: 1.3rem;
   flex: 1;
   outline: none;
+  min-width: 0; /* ВАЖНО: позволяет сжатие */
 }
 
 .cursor {
@@ -109,8 +116,8 @@ body {
   51%, 100% { opacity: 0; }
 }
 
-/* ГЛЮКИ ЭКРАНА */
-.crt::before {
+/* CRT + ГЛЮКИ */
+.terminal::before {
   content: '';
   position: absolute;
   top: 0; left: 0; right: 0; bottom: 0;
@@ -125,7 +132,7 @@ body {
   z-index: 1;
 }
 
-.crt::after {
+.terminal::after {
   content: '';
   position: absolute;
   top: 0; left: 0; right: 0; bottom: 0;
@@ -141,7 +148,6 @@ body {
   3%, 97% { opacity: 0.95; }
 }
 
-/* Трещины */
 .crack {
   position: absolute;
   width: 3px;
@@ -156,4 +162,10 @@ body {
 @keyframes crackle {
   0%, 100% { opacity: 0.1; }
   50% { opacity: 0.4; }
+}
+@media (max-width: 600px) {
+  .terminal { height: 95vh; }
+  .output, #cmd { font-size: 1.1rem; }
+  .header { padding: 8px 10px; }
+  .title { font-size: 1rem; }
 }
