@@ -24,33 +24,30 @@
       <span class="prompt">guest@anon:~$</span>
       <input type="text" id="cmd" autocomplete="off" autofocus placeholder="введи команду..." />
       <span class="cursor">█</span>
-      <button class="enter-btn" onclick="sendCommand()">Enter</button>
+      <button id="enterBtn" class="enter-btn">Enter</button>
     </div>
   </div>
 
   <audio id="typeSound" src="https://assets.mixkit.co/sfx/preview/mixkit-fast-keyboard-typing-2324.mp3" preload="auto"></audio>
   <script src="hacker.js"></script>
   <script>
-    function sendCommand() {
+    // Глобальная кнопка Enter (для мобильного)
+    document.getElementById('enterBtn').onclick = function() {
       const input = document.getElementById('cmd');
       const cmd = input.value.trim();
       if (cmd) {
-        const addLine = (text, type = '') => {
-          const line = document.createElement('div');
-          line.className = `line ${type}`;
-          line.textContent = text;
-          const output = document.getElementById('output');
-          output.appendChild(line);
-          output.scrollTop = output.scrollHeight;
-        };
         addLine(`guest@anon:~$ ${cmd}`, 'input');
-        // Вызов processCommand из hacker.js
-        window.processCommand(cmd); // Делаем processCommand глобальной
+        processCommand(cmd);
         history.unshift(cmd);
         historyIndex = -1;
       }
       input.value = '';
-    }
+    };
+
+    // Touch fallback: тап на поле — фокус
+    document.getElementById('cmd').addEventListener('touchstart', function() {
+      this.focus();
+    });
   </script>
 </body>
 </html>
