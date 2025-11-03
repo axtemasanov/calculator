@@ -1,4 +1,4 @@
-// === УМНЫЙ РУССКИЙ ИИ (RUGPT-3 SMALL + ZERO-SHOT ANTI-ECHO) ===
+// === СУПЕР МОЩНЫЙ ИИ (GPT-2 LARGE) ===
 let generator = null;
 let aiEnabled = false;
 let retryCount = 0;
@@ -19,15 +19,15 @@ const loadAI = async () => {
   let progressLine = addLine("[AI] Загрузка модели... [░░░░░░░░░░] 0%", 'progress-line');
   let progress = 0;
   const progressInterval = setInterval(() => {
-    progress += Math.random() * 20;
+    progress += Math.random() * 10; // Медленнее для большой модели
     if (progress > 100) progress = 100;
     updateProgressBar(progressLine, progress, "Загрузка модели...");
     if (progress >= 100) clearInterval(progressInterval);
-  }, 2000);
+  }, 3000);
 
   try {
     const { pipeline } = await import('https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2');
-    generator = await pipeline('text-generation', 'Xenova/sberbank-ai/rugpt3small_based_on_gpt2');
+    generator = await pipeline('text-generation', 'Xenova/gpt2-large'); // <- GPT-2 LARGE — 774M, супермощная, умнее в разы!
     aiEnabled = true;
     retryCount = 0;
     clearInterval(progressInterval);
@@ -38,7 +38,7 @@ const loadAI = async () => {
     retryCount++;
     if (retryCount < MAX_RETRIES) {
       updateProgressBar(progressLine, 0, "[AI] Ошибка — перезагрузка... (" + retryCount + "/" + MAX_RETRIES + ")");
-      setTimeout(() => loadAI(), 3000);
+      setTimeout(() => loadAI(), 5000);
     } else {
       updateProgressBar(progressLine, 0, "[AI] Ошибка. Проверь интернет или перезагрузи страницу.");
       progressLine.className = 'line error';
@@ -121,7 +121,7 @@ function sendCommand() {
     enterBtn.textContent = 'Enter';
     enterBtn.classList.remove('sending', 'processing');
     enterBtn.disabled = false;
-  }, 4000);
+  }, 6000); // 6 сек для large
 }
 
 function processCommand(cmd) {
@@ -134,7 +134,7 @@ function processCommand(cmd) {
     typeLine("hack — симуляция");
     typeLine("clear — очистить");
     typeLine("ai on — включить ИИ");
-    typeLine("ai <вопрос> — спросить (теперь на русском умнее!)");
+    typeLine("ai <вопрос> — спросить (теперь мощнее!)");
     setTimeout(() => enterBtn.classList.remove('processing'), 500);
   } else if (lower === 'ai on') {
     loadAI();
@@ -165,7 +165,7 @@ function processCommand(cmd) {
       const bar = '█'.repeat(barPos) + '░'.repeat(10 - barPos);
       thinkingLine.textContent = `[AI] Думаю${'.'.repeat(dots)} [${bar}]`;
       scrollToBottom();
-    }, 500);
+    }, 600);
 
     generateAI(q, thinkingInterval, thinkingLine);
   } else if (lower.startsWith('msg ')) {
@@ -190,31 +190,31 @@ function processCommand(cmd) {
   }
 }
 
-// generateAI (новая логика — zero-shot + fallback)
+// generateAI (новый подход — simple continuation)
 async function generateAI(q, thinkingInterval, thinkingLine) {
   try {
-    // Zero-shot: Простой промпт без примеров, чтобы модель "продолжала" без эха
-    const prompt = `A: ${q}?`; // Простой: "A: [вопрос]?" — модель продолжает как ответ
+    // Simple continuation: Начинаем с "Ответ: " + вопрос, модель продолжает как ответ
+    const prompt = `Ответ на вопрос "${q}":`; // Простой, чтобы модель "продолжала" ответ
     const res = await generator(prompt, { 
       max_new_tokens: 150,
       temperature: 0.8,
       top_p: 0.9,
       do_sample: true,
-      repetition_penalty: 2.0, // Максимум — режет повторы жёстко
-      no_repeat_ngram_size: 3, // Не повторять 3-граммы
+      repetition_penalty: 2.0,
+      no_repeat_ngram_size: 3,
       pad_token_id: generator.tokenizer.eos_token_id
     });
     let ans = res[0].generated_text.trim();
     
-    // Fallback-парсинг: Берём всё после 'A:', если есть, иначе всё, и удаляем вопрос
-    if (ans.includes('A:')) {
-      ans = ans.split('A:')[1].trim();
+    // Fallback: Берём всё после "Ответ на вопрос"
+    if (ans.includes('Ответ на вопрос')) {
+      ans = ans.split('Ответ на вопрос')[1].trim();
     }
-    ans = ans.replace(new RegExp(q, 'i'), '').trim(); // Удаляем вопрос
-    if (!ans || ans.length < 5) ans = "Я — хакерский ассистент. Умею генерировать код, считать математику, взламывать симуляции, отвечать на вопросы по киберу. Что взломаем?";
     
-    // Post-processing: Удаляем повторения
+    // Post-processing
+    ans = ans.replace(new RegExp(q, 'i'), '').trim();
     ans = ans.replace(/(\b\w+\b)(?=\s+\1)/g, '');
+    if (ans.length < 10) ans = "Я — хакерский ассистент. Умею генерировать код, считать математику, взламывать симуляции, отвечать на вопросы по киберу. Что взломаем?";
     ans = ans.substring(0, 300) + (ans.length > 300 ? '...' : '');
     
     clearInterval(thinkingInterval);
@@ -228,7 +228,7 @@ async function generateAI(q, thinkingInterval, thinkingLine) {
   }
 }
 
-// Остальные функции (streamResponse, typeLine, addLine, scrollToBottom, hackSimulation) — как раньше (не меняй)
+// ... (остальные функции как раньше: streamResponse, typeLine, addLine, scrollToBottom, hackSimulation, sendCommand, processCommand)
 function streamResponse(text, type = '') {
   const line = document.createElement('div');
   line.className = `line ${type} streaming`;
