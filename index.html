@@ -6,7 +6,7 @@
   <title>TERMINAL CHAT</title>
   <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
   <style>
-    /* ВСТРОЕННЫЕ ХАКЕРСКИЕ СТИЛИ — ЧЁРНЫЙ ФОН, ЗЕЛЁНЫЙ НЕОН, ГЛЮКИ */
+    /* ВСТРОЕННЫЕ ХАКЕРСКИЕ СТИЛИ — ЧЁРНЫЙ ФОН, ЗЕЛЁНЫЙ НЕОН */
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
@@ -85,7 +85,7 @@
     .line { 
       margin: 4px 0; 
       opacity: 0; 
-      animation: fadeIn 0.3s s forwards; 
+      animation: fadeIn 0.3s forwards; 
       text-shadow: 0 0 3px #0f0; 
       color: #0f0 !important;
     }
@@ -147,7 +147,7 @@
       content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
       background: repeating-linear-gradient(0deg, rgba(0,0,0,0.15), rgba(0,0,0,0.15) 1px, transparent 1px, transparent 2px);
       pointer-events: none; z-index: 1;
-      animation: scan 3s linear infinite;
+      animation: scan 3s infinite;
     }
     @keyframes scan {
       0% { background-position: 0 0; }
@@ -197,7 +197,7 @@
     @keyframes pulse-red { 0%, 100% { box-shadow: 0 0 5px #f00; } 50% { box-shadow: 0 0 15px #f00; } }
     .enter-btn.processing { background: #ff0; animation: blink 0.5s infinite; }
     .enter-btn.done { background: #0f0; animation: glow 0.5s ease-out; }
-  
+
     @media (max-width: 600px) {
       .terminal { height: calc(100vh - env(safe-area-inset-bottom)); }
       .output, #cmd { font-size: 1.1rem; }
@@ -239,35 +239,35 @@
     const input = document.getElementById('cmd');
     const typeSound = document.getElementById('typeSound');
     const enterBtn = document.querySelector('.enter-btn');
-    
+
     // Функция отправки
     function sendCommand() {
       if (enterBtn.classList.contains('sending')) return;
-      
+
       const cmd = input.value.trim();
       if (!cmd) return;
-      
+
       enterBtn.textContent = 'Отправка...';
       enterBtn.classList.add('sending');
       enterBtn.disabled = true;
-      
+
       addLine(`guest@anon:~$ ${cmd}`, 'input');
       processCommand(cmd);
       history.unshift(cmd);
       historyIndex = -1;
       input.value = '';
-      
+
       setTimeout(() => {
         enterBtn.textContent = 'Enter';
         enterBtn.classList.remove('sending');
         enterBtn.disabled = false;
       }, 2000);
     }
-    
+
     // processCommand
     function processCommand(cmd) {
       const lower = cmd.toLowerCase().trim();
-      
+
       if (lower === 'help') {
         enterBtn.textContent = 'Выполняю...';
         enterBtn.classList.add('processing');
@@ -293,10 +293,10 @@
           enterBtn.classList.remove('processing');
           return;
         }
-        
+
         enterBtn.textContent = 'Думаю...';
         enterBtn.classList.add('processing');
-        
+
         let thinkingLine = addLine(`[AI] Думаю... [░░░░░░░░░░]`, 'thinking');
         let dots = 0;
         let barPos = 0;
@@ -330,17 +330,134 @@
         setTimeout(() => enterBtn.classList.remove('sending'), 1000);
       }
     }
-    
-    // loadAI, generateAI, streamResponse, typeLine, addLine, scrollToBottom, hackSimulation — как в предыдущем коде (копируй оттуда, чтобы не повторять)
-    
-    // Приветствие (при загрузке)
+
+    // loadAI
+    const loadAI = async () => {
+      if (aiEnabled) return;
+      
+      let progressLine = addLine("[AI] Загрузка модели... [░░░░░░░░░░] 0%", 'progress-line');
+      let progress = 0;
+      const progressInterval = setInterval(() => {
+        progress += Math.random() * 20;
+        if (progress > 100) progress = 100;
+        updateProgressBar(progressLine, progress, "Загрузка модели...");
+        if (progress >= 100) clearInterval(progressInterval);
+      }, 2000);
+
+      try {
+        const { pipeline } = await import('https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2');
+        generator = await pipeline('text-generation', 'Xenova/distilgpt2');
+        aiEnabled = true;
+        clearInterval(progressInterval);
+        updateProgressBar(progressLine, 100, "[AI] ГОТОВ. Пиши: ai <вопрос>");
+        progressLine.className = 'line success';
+        enterBtn.classList.remove('processing');
+      } catch (e) {
+        clearInterval(progressInterval);
+        updateProgressBar(progressLine, 0, "[AI] Ошибка загрузка. Нет интернета?");
+        progressLine.className = 'line error';
+        enterBtn.classList.remove('processing');
+      }
+    };
+
+    function updateProgressBar(line, percent, text) {
+      const barLength = 10;
+      const filled = Math.floor((percent / 100) * barLength);
+      const bar = '█'.repeat(filled) + '░'.repeat(barLength - filled);
+      line.textContent = `${text} [${bar}] ${Math.floor(percent)}%`;
+      scrollToBottom();
+    }
+
+    // generateAI
+    async function generateAI(q, thinkingInterval, thinkingLine) {
+      try {
+        const res = await generator(`Q: ${q}\nA:`, { max_new_tokens: 80 });
+        const ans = res[0].generated_text.split('A:')[1]?.trim() || "Не понял.";
+        
+        clearInterval(thinkingInterval);
+        output.removeChild(thinkingLine);
+        
+        streamResponse(`[AI] ${ans}`, 'ai');
+        setTimeout(() => enterBtn.classList.remove('processing'), 1000);
+      } catch (e) {
+        clearInterval(thinkingInterval);
+        output.removeChild(thinkingLine);
+        typeLine("[AI] Ошибка.", 'error');
+        enterBtn.classList.remove('processing');
+      }
+    }
+
+    // streamResponse
+    function streamResponse(text, type = '') {
+      const line = document.createElement('div');
+      line.className = `line ${type} streaming`;
+      line.textContent = '';
+      output.appendChild(line);
+      let i = 0;
+      const int = setInterval(() => {
+        if (i < text.length) {
+          line.textContent += text[i++];
+          if (typeSound) typeSound.play().catch(() => {});
+          scrollToBottom();
+        } else {
+          clearInterval(int);
+          line.classList.remove('streaming');
+        }
+      }, 50);
+    }
+
+    // typeLine
+    function typeLine(text, type = '') {
+      const line = document.createElement('div');
+      line.className = `line ${type}`;
+      line.textContent = '';
+      output.appendChild(line);
+      let i = 0;
+      const int = setInterval(() => {
+        if (i < text.length) {
+          line.textContent += text[i++];
+          if (typeSound) typeSound.play().catch(() => {});
+        } else clearInterval(int);
+        scrollToBottom();
+      }, 25);
+    }
+
+    // addLine
+    function addLine(text, type = '') {
+      const line = document.createElement('div');
+      line.className = `line ${type}`;
+      line.textContent = text;
+      output.appendChild(line);
+      scrollToBottom();
+      return line;
+    }
+
+    // scrollToBottom
+    function scrollToBottom() {
+      if (output) output.scrollTop = output.scrollHeight;
+    }
+
+    // hackSimulation
+    function hackSimulation() {
+      const steps = ["Сканирую сеть...", "Взлом порта 443...", "Root-доступ...", "ВЗЛОМ УСПЕШЕН!"];
+      let i = 0;
+      const run = () => { 
+        if (i < steps.length) { 
+          typeLine(steps[i++], i === steps.length ? 'success' : '');
+          setTimeout(run, 1200); 
+        } 
+      };
+      run();
+    }
+
+    // Приветствие
     typeLine("Добро пожаловать в АНОНИМНЫЙ ТЕРМИНАЛ v9.99");
     typeLine("Подключение к darknet... [OK]");
     typeLine("Аутентификация: GUEST MODE");
     typeLine("Команды: help, msg, hack, clear, ai on");
     typeLine("");
-    
-    // Эффекты (трещины)
+
+    // Эффекты трещин
     const terminal = document.querySelector('.terminal');
     if (terminal) {
       for (let i = 0; i < 5; i++) {
@@ -351,8 +468,8 @@
         terminal.appendChild(crack);
       }
     }
-    
-    // Клавиатура (fallback для Enter)
+
+    // Клавиатура Enter
     if (input) {
       input.addEventListener('keydown', e => {
         if (e.key === 'Enter') {
