@@ -9,11 +9,11 @@ const loadAI = async () => {
   let progressLine = addProgressLine("[AI] Загрузка модели... [░░░░░░░░░░] 0%");
   let progress = 0;
   const progressInterval = setInterval(() => {
-    progress += Math.random() * 20; // Имитация прогресса
+    progress += Math.random() * 20;
     if (progress > 100) progress = 100;
     updateProgressBar(progressLine, progress, "Загрузка модели...");
     if (progress >= 100) clearInterval(progressInterval);
-  }, 2000); // Обновление каждые 2 сек
+  }, 2000);
 
   try {
     const { pipeline } = await import('https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2');
@@ -29,7 +29,7 @@ const loadAI = async () => {
   }
 };
 
-// Функция для создания прогресс-линии
+// Функции для прогресса
 function addProgressLine(text) {
   const line = document.createElement('div');
   line.className = 'line progress-line';
@@ -39,7 +39,6 @@ function addProgressLine(text) {
   return line;
 }
 
-// Обновление прогресс-бара
 function updateProgressBar(line, percent, text) {
   const barLength = 10;
   const filled = Math.floor((percent / 100) * barLength);
@@ -109,14 +108,14 @@ function processCommand(cmd) {
     if (!q) { typeLine("Ошибка: вопрос?", 'error'); return; }
     if (!aiEnabled) { typeLine("Сначала: ai on", 'error'); return; }
     
-    // Мигающий "ДУМАЮ..."
+    // Мигающий "ДУМАЮ..." с баром
     let thinkingLine = addLine(`[AI] Думаю... [░░░░░░░░░░]`, 'thinking');
     let dots = 0;
+    let barPos = 0;
     const thinkingInterval = setInterval(() => {
       dots = (dots + 1) % 4;
-      const barLength = 10;
-      const filled = Math.floor(Math.random() * barLength); // Имитация "мышления"
-      const bar = '█'.repeat(filled) + '░'.repeat(barLength - filled);
+      barPos = (barPos + 1) % 10; // Циклический бар
+      const bar = '█'.repeat(barPos) + '░'.repeat(10 - barPos);
       thinkingLine.textContent = `[AI] Думаю${'.'.repeat(dots)} [${bar}]`;
       output.scrollTop = output.scrollHeight;
     }, 500); // Мигает каждые 0.5 сек
@@ -135,19 +134,38 @@ function processCommand(cmd) {
 
 async function generateAI(q, thinkingInterval, thinkingLine) {
   try {
-    const res = await generator(`Q: ${q}\nA:`, { max_new_tokens: 50 });
+    const res = await generator(`Q: ${q}\nA:`, { max_new_tokens: 80 }); // Увеличил до 80 токенов для длиннее ответов
     const ans = res[0].generated_text.split('A:')[1]?.trim() || "Не понял.";
     
-    // Удаляем мигающий индикатор
+    // Удаляем индикатор "ДУМАЮ..."
     clearInterval(thinkingInterval);
     output.removeChild(thinkingLine);
     
-    typeLine(`[AI] ${ans}`, 'ai');
+    // Печатаем ответ посимвольно (поток)
+    streamResponse(`[AI] ${ans}`, 'ai');
   } catch (e) {
     clearInterval(thinkingInterval);
     output.removeChild(thinkingLine);
     typeLine("[AI] Ошибка.", 'error');
   }
+}
+
+// Потоковая печать ответа (симулирует streaming)
+function streamResponse(text, type = '') {
+  const line = document.createElement('div');
+  line.className = `line ${type} streaming`;
+  output.appendChild(line);
+  let i = 0;
+  const int = setInterval(() => {
+    if (i < text.length) {
+      line.textContent += text[i++];
+      typeSound.currentTime = 0; typeSound.play();
+      output.scrollTop = output.scrollHeight;
+    } else {
+      clearInterval(int);
+      line.classList.remove('streaming'); // Убираем мигающий курсор
+    }
+  }, 50); // Печатает каждые 50 мс (быстро, как поток)
 }
 
 function typeLine(text, type = '') {
@@ -170,7 +188,7 @@ function addLine(text, type = '') {
   line.textContent = text;
   output.appendChild(line);
   output.scrollTop = output.scrollHeight;
-  return line; // Возвращаем для обновления
+  return line;
 }
 
 function hackSimulation() {
