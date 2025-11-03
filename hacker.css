@@ -1,220 +1,143 @@
-// === БЕСПЛАТНЫЙ ИИ В БРАУЗЕРЕ ===
-let generator = null;
-let aiEnabled = false;
+* { margin: 0; padding: 0; box-sizing: border-box; }
 
-const loadAI = async () => {
-  if (aiEnabled) return;
-  
-  let progressLine = addLine("[AI] Загрузка модели... [░░░░░░░░░░] 0%", 'progress-line');
-  let progress = 0;
-  const progressInterval = setInterval(() => {
-    progress += Math.random() * 20;
-    if (progress > 100) progress = 100;
-    updateProgressBar(progressLine, progress, "Загрузка модели...");
-    if (progress >= 100) clearInterval(progressInterval);
-  }, 2000);
-
-  try {
-    const { pipeline } = await import('https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2');
-    generator = await pipeline('text-generation', 'Xenova/distilgpt2');
-    aiEnabled = true;
-    clearInterval(progressInterval);
-    updateProgressBar(progressLine, 100, "[AI] ГОТОВ. Пиши: ai <вопрос>");
-    progressLine.className = 'line success';
-  } catch (e) {
-    clearInterval(progressInterval);
-    updateProgressBar(progressLine, 0, "[AI] Ошибка загрузки. Нет интернета?");
-    progressLine.className = 'line error';
-  }
-};
-
-function updateProgressBar(line, percent, text) {
-  const barLength = 10;
-  const filled = Math.floor((percent / 100) * barLength);
-  const bar = '█'.repeat(filled) + '░'.repeat(barLength - filled);
-  line.textContent = `${text} [${bar}] ${Math.floor(percent)}%`;
-  output.scrollTop = output.scrollHeight;
+body {
+  background: #000;
+  color: #0f0;
+  font-family: 'VT323', monospace;
+  overflow: hidden;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 10px;
 }
 
-// === ОСНОВНОЙ КОД ===
-const output = document.getElementById('output');
-const input = document.getElementById('cmd');
-const typeSound = document.getElementById('typeSound');
-let history = [], historyIndex = -1;
-
-// Эффекты
-const terminal = document.querySelector('.terminal');
-if (terminal) {
-  terminal.classList.add('crt');
-  for (let i = 0; i < 3; i++) {
-    const crack = document.createElement('div');
-    crack.className = 'crack';
-    crack.style.left = Math.random() * 100 + '%';
-    crack.style.top = Math.random() * 100 + '%';
-    terminal.appendChild(crack);
-  }
+.terminal {
+  width: 100%;
+  max-width: 900px;
+  height: 90vh;
+  background: #000;
+  border: 2px solid #0f0;
+  border-radius: 8px;
+  box-shadow: 0 0 20px #0f0, 0 0 40px #0f0, inset 0 0 20px rgba(0,255,0,0.1);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
-// Приветствие
-typeLine("Добро пожаловать в АНОНИМНЫЙ ТЕРМИНАЛ v9.99");
-typeLine("Подключение к darknet... [OK]");
-typeLine("Аутентификация: GUEST MODE");
-typeLine("Команды: help, msg, hack, clear, ai on");
-typeLine("");
-
-// Кнопка Enter для мобильного
-const inputLine = document.querySelector('.input-line');
-if (inputLine && input) {
-  const enterBtn = document.createElement('button');
-  enterBtn.textContent = 'Enter';
-  enterBtn.className = 'enter-btn';
-  enterBtn.onclick = () => {
-    const cmd = input.value.trim();
-    if (cmd) {
-      addLine(`guest@anon:~$ ${cmd}`, 'input');
-      processCommand(cmd);
-      history.unshift(cmd);
-      historyIndex = -1;
-    }
-    input.value = '';
-  };
-  inputLine.appendChild(enterBtn);
+.header {
+  background: #111;
+  padding: 10px 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #0f0;
+  flex-shrink: 0;
 }
 
-// Ввод (keydown + touch fallback)
-if (input) {
-  input.addEventListener('keydown', e => {
-    if (e.key === 'Enter') {
-      e.preventDefault(); // Предотвращаем дефолт на мобильном
-      const cmd = input.value.trim();
-      if (cmd) {
-        addLine(`guest@anon:~$ ${cmd}`, 'input');
-        processCommand(cmd);
-        history.unshift(cmd);
-        historyIndex = -1;
-      }
-      input.value = '';
-    } else if (e.key === 'ArrowUp' && history.length) {
-      historyIndex = Math.min(historyIndex + 1, history.length - 1);
-      input.value = history[historyIndex] || '';
-      e.preventDefault();
-    } else if (e.key === 'ArrowDown') {
-      historyIndex = Math.max(historyIndex - 1, -1);
-      input.value = historyIndex === -1 ? '' : history[historyIndex];
-      e.preventDefault();
-    } else if (e.key.length === 1) {
-      if (typeSound) typeSound.play().catch(() => {});
-    }
-  });
+.title { font-size: 1.2rem; letter-spacing: 1px; }
 
-  // Touch fallback: тап на поле — фокус
-  input.addEventListener('touchstart', () => input.focus());
+.controls .dot {
+  width: 12px; height: 12px; border-radius: 50%; margin-left: 6px;
+  display: inline-block;
+}
+.red { background: #f00; box-shadow: 0 0 8px #f00; }
+.yellow { background: #ff0; box-shadow: 0 0 8px #ff0; }
+.green { background: #0f0; box-shadow: 0 0 8px #0f0; }
+
+.output {
+  flex: 1;
+  padding: 15px;
+  overflow-y: auto;
+  line-height: 1.6;
+  font-size: 1.3rem;
+  min-height: 0;
+}
+.output::-webkit-scrollbar { width: 8px; }
+.output::-webkit-scrollbar-track { background: #000; }
+.output::-webkit-scrollbar-thumb { background: #0f0; border-radius: 4px; }
+
+.line { margin: 4px 0; opacity: 0; animation: fadeIn 0.3s forwards; }
+@keyframes fadeIn { to { opacity: 1; } }
+
+.input-line {
+  display: flex;
+  align-items: center;
+  padding: 10px 15px;
+  background: rgba(0,255,0,0.05);
+  border-top: 1px dashed #0f0;
+  flex-shrink: 0;
 }
 
-function processCommand(cmd) {
-  const lower = cmd.toLowerCase().trim();
-  if (lower === 'help') {
-    typeLine("msg <текст> — анонимка");
-    typeLine("hack — симуляция");
-    typeLine("clear — очистить");
-    typeLine("ai on — включить ИИ");
-    typeLine("ai <вопрос> — спросить");
-  } else if (lower === 'ai on') {
-    loadAI();
-  } else if (lower.startsWith('ai ')) {
-    const q = cmd.slice(3).trim();
-    if (!q) { typeLine("Ошибка: вопрос?", 'error'); return; }
-    if (!aiEnabled) { typeLine("Сначала: ai on", 'error'); return; }
-    
-    let thinkingLine = addLine(`[AI] Думаю... [░░░░░░░░░░]`, 'thinking');
-    let dots = 0;
-    let barPos = 0;
-    const thinkingInterval = setInterval(() => {
-      dots = (dots + 1) % 4;
-      barPos = (barPos + 1) % 10;
-      const bar = '█'.repeat(barPos) + '░'.repeat(10 - barPos);
-      thinkingLine.textContent = `[AI] Думаю${'.'.repeat(dots)} [${bar}]`;
-      output.scrollTop = output.scrollHeight;
-    }, 500);
-
-    generateAI(q, thinkingInterval, thinkingLine);
-  } else if (lower.startsWith('msg ')) {
-    typeLine(`[ANON] ${cmd.slice(4)}`, 'msg');
-  } else if (lower === 'clear') {
-    output.innerHTML = '';
-  } else if (lower === 'hack') {
-    hackSimulation();
-  } else {
-    typeLine(`bash: ${cmd}: не найдено`, 'error');
-  }
+.prompt { color: #0f0; margin-right: 8px; white-space: nowrap; }
+#cmd {
+  background: transparent;
+  border: none;
+  color: #0f0;
+  font-family: 'VT323', monospace;
+  font-size: 1.3rem;
+  flex: 1;
+  outline: none;
+  min-width: 0;
 }
+.cursor { animation: blink 1s infinite; color: #0f0; margin-left: 2px; }
+@keyframes blink { 0%,50% { opacity: 1; } 51%,100% { opacity: 0; } }
 
-async function generateAI(q, thinkingInterval, thinkingLine) {
-  try {
-    const res = await generator(`Q: ${q}\nA:`, { max_new_tokens: 80 });
-    const ans = res[0].generated_text.split('A:')[1]?.trim() || "Не понял.";
-    
-    clearInterval(thinkingInterval);
-    output.removeChild(thinkingLine);
-    
-    streamResponse(`[AI] ${ans}`, 'ai');
-  } catch (e) {
-    clearInterval(thinkingInterval);
-    output.removeChild(thinkingLine);
-    typeLine("[AI] Ошибка.", 'error');
-  }
+/* СТИЛИ ДЛЯ СООБЩЕНИЙ */
+.line.ai { color: #0f0; text-shadow: 0 0 8px #0f0; font-style: italic; }
+.line.success { color: #0f0; }
+.line.error { color: #f00; }
+.line.msg { color: #ff0; }
+.line.system { color: #888; }
+.line.input { color: #0f0; }
+
+/* CRT ЭФФЕКТ */
+.terminal::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  background: repeating-linear-gradient(0deg, rgba(0,0,0,0.15), rgba(0,0,0,0.15) 1px, transparent 1px, transparent 2px);
+  pointer-events: none; z-index: 1;
 }
-
-function streamResponse(text, type = '') {
-  const line = document.createElement('div');
-  line.className = `line ${type} streaming`;
-  line.textContent = '';
-  output.appendChild(line);
-  let i = 0;
-  const int = setInterval(() => {
-    if (i < text.length) {
-      line.textContent += text[i++];
-      if (typeSound) typeSound.play().catch(() => {});
-      output.scrollTop = output.scrollHeight;
-    } else {
-      clearInterval(int);
-      line.classList.remove('streaming');
-    }
-  }, 50);
+.terminal::after {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  background: radial-gradient(circle at center, transparent 0%, rgba(0,255,0,0.03) 100%);
+  animation: flicker 3s infinite; pointer-events: none; z-index: 2;
 }
+@keyframes flicker { 0%,100% { opacity: 0.98; } 50% { opacity: 1; } }
 
-function typeLine(text, type = '') {
-  const line = document.createElement('div');
-  line.className = `line ${type}`;
-  line.textContent = '';
-  output.appendChild(line);
-  let i = 0;
-  const int = setInterval(() => {
-    if (i < text.length) {
-      line.textContent += text[i++];
-      if (typeSound) typeSound.play().catch(() => {});
-    } else clearInterval(int);
-    output.scrollTop = output.scrollHeight;
-  }, 25);
+/* ТРЕЩИНЫ */
+.crack {
+  position: absolute; width: 3px; height: 100px;
+  background: linear-gradient(to bottom, #0f0, transparent);
+  transform: rotate(45deg); opacity: 0.3; pointer-events: none;
+  animation: crackle 5s infinite;
 }
+@keyframes crackle { 0%,100% { opacity: 0.1; } 50% { opacity: 0.4; } }
 
-function addLine(text, type = '') {
-  const line = document.createElement('div');
-  line.className = `line ${type}`;
-  line.textContent = text;
-  output.appendChild(line);
-  output.scrollTop = output.scrollHeight;
-  return line;
+/* ПРОГРЕСС И ПОТОК */
+.progress-line { color: #0f0; animation: pulse 1s infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+.thinking { color: #ff0; animation: blink 0.5s infinite; }
+@keyframes blink { 0%, 50% { opacity: 1; } 51%, 100% { opacity: 0.3; } }
+.streaming { color: #0f0; animation: type 0.1s infinite; }
+@keyframes type { 0%, 100% { border-right: 2px solid #0f0; } 50% { border-right: none; } }
+.bar { color: #0f0; }
+
+/* Кнопка Enter для мобильного */
+.enter-btn {
+  background: #0f0;
+  color: #000;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-family: 'VT323', monospace;
+  font-size: 1rem;
 }
+.enter-btn:hover { background: #00ff00; }
 
-function hackSimulation() {
-  const steps = ["Сканирую сеть...", "Взлом порта 443...", "Root-доступ...", "ВЗЛОМ УСПЕШЕН!"];
-  let i = 0;
-  const run = () => { 
-    if (i < steps.length) { 
-      typeLine(steps[i++], i === steps.length ? 'success' : ''); 
-      setTimeout(run, 1200); 
-    } 
-  };
-  run();
+@media (max-width: 600px) {
+  .terminal { height: 95vh; }
+  .output, #cmd { font-size: 1.1rem; }
+  .title { font-size: 1rem; }
 }
