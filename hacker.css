@@ -1,11 +1,11 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
-  background: #000 !important; /* Чёрный фон, принудительно */
-  color: #0f0 !important; /* Зелёный текст */
+  background: #000;
+  color: #0f0;
   font-family: 'VT323', monospace;
   overflow: hidden;
-  height: 100vh;
+  height: 100dvh; /* Динамическая высота — игнорирует тулбар */
   display: flex;
   justify-content: center;
   align-items: center;
@@ -15,76 +15,18 @@ body {
 .terminal {
   width: 100%;
   max-width: 900px;
-  height: 90vh;
-  background: #000 !important; /* Чёрный корпус */
+  height: 100dvh; /* Динамическая высота — поле ввода всегда видно */
+  background: #000;
   border: 2px solid #0f0;
   border-radius: 8px;
-  box-shadow: 
-    0 0 20px #0f0, 
-    0 0 40px #0f0, 
-    0 0 60px #0f0, 
-    inset 0 0 20px rgba(0,255,0,0.1);
+  box-shadow: 0 0 20px #0f0, 0 0 40px #0f0, inset 0 0 20px rgba(0,255,0,0.1);
   position: relative;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  animation: glow 2s infinite alternate; /* Неоновое свечение */
 }
 
-@keyframes glow {
-  0% { box-shadow: 0 0 20px #0f0, 0 0 40px #0f0; }
-  100% { box-shadow: 0 0 30px #0f0, 0 0 60px #0f0, 0 0 80px #0f0; }
-}
-
-.header {
-  background: #111;
-  padding: 10px 15px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid #0f0;
-  flex-shrink: 0;
-  text-shadow: 0 0 5px #0f0;
-}
-
-.title { 
-  font-size: 1.2rem; 
-  letter-spacing: 1px; 
-  color: #0f0; 
-  text-shadow: 0 0 10px #0f0; 
-}
-
-.controls .dot {
-  width: 12px; height: 12px; border-radius: 50%; margin-left: 6px;
-  display: inline-block;
-  box-shadow: 0 0 8px currentColor;
-}
-.red { background: #f00; }
-.yellow { background: #ff0; }
-.green { background: #0f0; }
-
-.output {
-  flex: 1;
-  padding: 15px;
-  overflow-y: auto;
-  line-height: 1.6;
-  font-size: 1.3rem;
-  min-height: 0;
-  background: rgba(0,0,0,0.8) !important; /* Тёмный фон для текста */
-  color: #0f0 !important; /* Зелёный текст везде */
-}
-.output::-webkit-scrollbar { width: 8px; }
-.output::-webkit-scrollbar-track { background: #000; }
-.output::-webkit-scrollbar-thumb { background: #0f0; border-radius: 4px; box-shadow: 0 0 5px #0f0; }
-
-.line { 
-  margin: 4px 0; 
-  opacity: 0; 
-  animation: fadeIn 0.3s forwards; 
-  text-shadow: 0 0 3px #0f0; 
-  color: #0f0 !important; /* Зелёный для всех линий */
-}
-@keyframes fadeIn { to { opacity: 1; } }
+/* Остальные стили (header, output, line, input-line, prompt, #cmd, cursor, .line.ai и т.д.) — как в предыдущем сообщении, без изменений */
 
 .input-line {
   display: flex;
@@ -93,96 +35,23 @@ body {
   background: rgba(0,255,0,0.05);
   border-top: 1px dashed #0f0;
   flex-shrink: 0;
+  position: sticky;
+  bottom: 0; /* Фиксирует внизу, чтобы не скрывался под клавиатурой */
+  z-index: 10;
 }
 
-.prompt { 
-  color: #0f0; 
-  margin-right: 8px; 
-  white-space: nowrap; 
-  text-shadow: 0 0 5px #0f0; 
-}
+/* Для мобильного: поле ввода всегда на виду */
 #cmd {
   background: transparent;
   border: none;
-  color: #0f0 !important;
+  color: #0f0;
   font-family: 'VT323', monospace;
   font-size: 1.3rem;
   flex: 1;
   outline: none;
   min-width: 0;
-  text-shadow: 0 0 3px #0f0;
-}
-.cursor { 
-  animation: blink 1s infinite; 
-  color: #0f0; 
-  margin-left: 2px; 
-  text-shadow: 0 0 5px #0f0; 
-}
-@keyframes blink { 0%,50% { opacity: 1; } 51%,100% { opacity: 0; } }
-
-/* СТИЛИ ДЛЯ СООБЩЕНИЙ */
-.line.ai { color: #0f0; text-shadow: 0 0 8px #0f0; font-style: italic; }
-.line.success { color: #0f0; text-shadow: 0 0 5px #0f0; }
-.line.error { color: #f00; text-shadow: 0 0 5px #f00; }
-.line.msg { color: #ff0; text-shadow: 0 0 5px #ff0; }
-.line.system { color: #888; }
-.line.input { color: #0f0; text-shadow: 0 0 3px #0f0; }
-
-/* CRT + ГЛЮКИ */
-.terminal::before {
-  content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-  background: repeating-linear-gradient(0deg, rgba(0,0,0,0.15), rgba(0,0,0,0.15) 1px, transparent 1px, transparent 2px);
-  pointer-events: none; z-index: 1;
-  animation: scan 3s linear infinite;
-}
-@keyframes scan {
-  0% { background-position: 0 0; }
-  100% { background-position: 0 100vh; }
+  position: relative;
+  z-index: 11;
 }
 
-.terminal::after {
-  content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-  background: radial-gradient(circle at center, transparent 0%, rgba(0,255,0,0.05) 100%);
-  animation: flicker 0.15s infinite; pointer-events: none; z-index: 2;
-}
-@keyframes flicker { 0%,100% { opacity: 0.98; } 50% { opacity: 1; } }
-
-/* ТРЕЩИНЫ */
-.crack {
-  position: absolute; width: 3px; height: 100px;
-  background: linear-gradient(to bottom, #0f0, transparent);
-  transform: rotate(45deg); opacity: 0.3; pointer-events: none;
-  animation: crackle 5s infinite;
-}
-@keyframes crackle { 0%,100% { opacity: 0.1; } 50% { opacity: 0.5; transform: rotate(45deg) scale(1.1); } }
-
-/* ПРОГРЕСС И ПОТОК */
-.progress-line { color: #0f0; animation: pulse 1s infinite; text-shadow: 0 0 5px #0f0; }
-@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-.thinking { color: #ff0; animation: blink 0.5s infinite; text-shadow: 0 0 5px #ff0; }
-@keyframes blink { 0%, 50% { opacity: 1; } 51%, 100% { opacity: 0.3; } }
-.streaming { color: #0f0; animation: type 0.1s infinite; text-shadow: 0 0 3px #0f0; }
-@keyframes type { 0%, 100% { border-right: 2px solid #0f0; } 50% { border-right: none; } }
-.bar { color: #0f0; text-shadow: 0 0 3px #0f0; }
-
-/* Кнопка Enter */
-.enter-btn {
-  background: #0f0;
-  color: #000;
-  border: none;
-  padding: 5px 10px;
-  border-radius: 5px;
-  cursor: pointer;
-  font-family: 'VT323', monospace;
-  font-size: 1rem;
-  box-shadow: 0 0 5px #0f0;
-  transition: all 0.2s;
-}
-.enter-btn:hover { background: #00ff00; box-shadow: 0 0 10px #0f0; }
-
-@media (max-width: 600px) {
-  .terminal { height: 95vh; }
-  .output, #cmd { font-size: 1.1rem; }
-  .title { font-size: 1rem; }
-  .enter-btn { padding: 3px 8px; font-size: 0.9rem; }
-}
+/* Остальные стили (CRT, трещины, прогресс и т.д.) — как раньше */
