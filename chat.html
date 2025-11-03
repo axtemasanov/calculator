@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>TERMINAL CHAT</title>
+  <link rel="stylesheet" href="hacker.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="terminal">
+    <div class="header">
+      <span class="title">root@darknet:~#</span>
+      <div class="controls">
+        <span class="dot red"></span>
+        <span class="dot yellow"></span>
+        <span class="dot green"></span>
+      </div>
+    </div>
+
+    <div id="output" class="output"></div>
+
+    <div class="input-line">
+      <span class="prompt">guest@anon:~$</span>
+      <input type="text" id="cmd" autocomplete="off" autofocus placeholder="введи команду или сообщение..." />
+      <span class="cursor">█</span>
+    </div>
+  </div>
+
+  <audio id="typeSound" src="https://assets.mixkit.co/sfx/preview/mixkit-fast-keyboard-typing-2324.mp3" preload="auto"></audio>
+  <script src="hacker.js"></script>
+</body>
+</html>
