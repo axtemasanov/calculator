@@ -1,4 +1,4 @@
-// === УМНЫЙ РУССКИЙ ИИ (RUGPT-3 SMALL + ANTI-LOOP FIX) ===
+// === УМНЫЙ РУССКИЙ ИИ (RUGPT-3 MEDIUM + ANTI-ECHO FIX) ===
 let generator = null;
 let aiEnabled = false;
 let retryCount = 0;
@@ -27,7 +27,7 @@ const loadAI = async () => {
 
   try {
     const { pipeline } = await import('https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2');
-    generator = await pipeline('text-generation', 'Xenova/sberbank-ai/rugpt3small_based_on_gpt2');
+    generator = await pipeline('text-generation', 'Xenova/sberbank-ai/rugpt3medium_based_on_gpt2'); // <- RUGPT-3 MEDIUM — 355M, топ для русского!
     aiEnabled = true;
     retryCount = 0;
     clearInterval(progressInterval);
@@ -163,7 +163,7 @@ function processCommand(cmd) {
       dots = (dots + 1) % 4;
       barPos = (barPos + 1) % 10;
       const bar = '█'.repeat(barPos) + '░'.repeat(10 - barPos);
-      thinkingLine.textContent = `[AI] Думаю${'.' .repeat(dots)} [${bar}]`;
+      thinkingLine.textContent = `[AI] Думаю${'.'.repeat(dots)} [${bar}]`;
       scrollToBottom();
     }, 500);
 
@@ -190,32 +190,34 @@ function processCommand(cmd) {
   }
 }
 
-// generateAI (новый подход — simple continuation без Q:A)
+// generateAI (новый подход — continuation без 'A:')
 async function generateAI(q, thinkingInterval, thinkingLine) {
   try {
-    // Simple continuation: "Ответ на '${q}': " — модель продолжает как ответ, без "Q:A" шаблона
-    const prompt = `Ответ на '${q}':`;
+    // Continuation: "Ответ на вопрос '${q}': " — модель продолжает как ответ, без шаблона, который сбивал её
+    const prompt = `Ответ на вопрос "${q}": `;
     const res = await generator(prompt, { 
       max_new_tokens: 150,
       temperature: 0.9, // Больше разнообразия
-      top_k: 50, // Фильтр топ-50 токенов
+      top_k: 50, // Топ-50 токенов
       top_p: 0.95,
       do_sample: true,
-      repetition_penalty: 2.0, // Жёстко режет повторы
-      no_repeat_ngram_size: 4, // Не повторять 4-граммы (длинные фразы)
+      repetition_penalty: 2.0, // Жёстко
+      no_repeat_ngram_size: 3, // 3-граммы без повторений
       pad_token_id: generator.tokenizer.eos_token_id
     });
-    let ans = res[0].generated_text.split(`Ответ на '${q}':`)[1]?.trim() || res[0].generated_text.trim();
+    let ans = res[0].generated_text.trim();
     
-    // Fallback: Если не нашлось, берём всё после ':'
-    if (!ans) {
-      ans = res[0].generated_text.split(':')[1]?.trim() || "Не понял.";
+    // Парсинг: Берём всё после ": "
+    if (ans.includes(': ')) {
+      ans = ans.split(': ')[1].trim();
     }
     
     // Post-processing: Удаляем вопрос, повторения
     ans = ans.replace(new RegExp(q, 'i'), '').trim();
     ans = ans.replace(/(\b\w+\b)(?=\s+\1)/g, '');
-    if (ans.length < 10) ans = "Я — хакерский ассистент. Умею генерировать код, считать математику, взламывать симуляции, отвечать на вопросы по киберу. Что взломаем?";
+    if (ans.length < 10 || ans.includes(q)) {
+      ans = "Я — хакерский ассистент. Умею генерировать код, считать математику, взламывать симуляции, отвечать на вопросы по киберу. Что взломаем сегодня?";
+    }
     ans = ans.substring(0, 300) + (ans.length > 300 ? '...' : '');
     
     clearInterval(thinkingInterval);
