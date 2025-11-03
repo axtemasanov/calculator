@@ -1,11 +1,10 @@
-// === БЕСПЛАТНЫЙ ИИ В БРАУЗЕРЕ (Hugging Face) ===
+// === БЕСПЛАТНЫЙ ИИ В БРАУЗЕРЕ ===
 let generator = null;
 let aiEnabled = false;
 
 const loadAI = async () => {
   if (aiEnabled) return;
   
-  // Прогресс загрузки модели
   let progressLine = addLine("[AI] Загрузка модели... [░░░░░░░░░░] 0%", 'progress-line');
   let progress = 0;
   const progressInterval = setInterval(() => {
@@ -44,14 +43,15 @@ const typeSound = document.getElementById('typeSound');
 let history = [], historyIndex = -1;
 
 // Эффекты
-if (document.querySelector('.terminal')) {
-  document.querySelector('.terminal').classList.add('crt');
+const terminal = document.querySelector('.terminal');
+if (terminal) {
+  terminal.classList.add('crt');
   for (let i = 0; i < 3; i++) {
     const crack = document.createElement('div');
     crack.className = 'crack';
     crack.style.left = Math.random() * 100 + '%';
     crack.style.top = Math.random() * 100 + '%';
-    document.querySelector('.terminal').appendChild(crack);
+    terminal.appendChild(crack);
   }
 }
 
@@ -62,10 +62,30 @@ typeLine("Аутентификация: GUEST MODE");
 typeLine("Команды: help, msg, hack, clear, ai on");
 typeLine("");
 
-// Ввод
+// Кнопка Enter для мобильного
+const inputLine = document.querySelector('.input-line');
+if (inputLine && input) {
+  const enterBtn = document.createElement('button');
+  enterBtn.textContent = 'Enter';
+  enterBtn.className = 'enter-btn';
+  enterBtn.onclick = () => {
+    const cmd = input.value.trim();
+    if (cmd) {
+      addLine(`guest@anon:~$ ${cmd}`, 'input');
+      processCommand(cmd);
+      history.unshift(cmd);
+      historyIndex = -1;
+    }
+    input.value = '';
+  };
+  inputLine.appendChild(enterBtn);
+}
+
+// Ввод (keydown + touch fallback)
 if (input) {
   input.addEventListener('keydown', e => {
     if (e.key === 'Enter') {
+      e.preventDefault(); // Предотвращаем дефолт на мобильном
       const cmd = input.value.trim();
       if (cmd) {
         addLine(`guest@anon:~$ ${cmd}`, 'input');
@@ -83,17 +103,16 @@ if (input) {
       input.value = historyIndex === -1 ? '' : history[historyIndex];
       e.preventDefault();
     } else if (e.key.length === 1) {
-      if (typeSound) {
-        typeSound.currentTime = 0;
-        typeSound.volume = 0.08;
-        typeSound.play().catch(() => {}); // Игнор ошибок на мобильном
-      }
+      if (typeSound) typeSound.play().catch(() => {});
     }
   });
+
+  // Touch fallback: тап на поле — фокус
+  input.addEventListener('touchstart', () => input.focus());
 }
 
 function processCommand(cmd) {
-  const lower = cmd.toLowerCase().trim(); // Улучшил для русского
+  const lower = cmd.toLowerCase().trim();
   if (lower === 'help') {
     typeLine("msg <текст> — анонимка");
     typeLine("hack — симуляция");
@@ -107,7 +126,6 @@ function processCommand(cmd) {
     if (!q) { typeLine("Ошибка: вопрос?", 'error'); return; }
     if (!aiEnabled) { typeLine("Сначала: ai on", 'error'); return; }
     
-    // Мигающий "ДУМАЮ..." с баром
     let thinkingLine = addLine(`[AI] Думаю... [░░░░░░░░░░]`, 'thinking');
     let dots = 0;
     let barPos = 0;
@@ -136,11 +154,9 @@ async function generateAI(q, thinkingInterval, thinkingLine) {
     const res = await generator(`Q: ${q}\nA:`, { max_new_tokens: 80 });
     const ans = res[0].generated_text.split('A:')[1]?.trim() || "Не понял.";
     
-    // Удаляем индикатор
     clearInterval(thinkingInterval);
     output.removeChild(thinkingLine);
     
-    // Потоковая печать
     streamResponse(`[AI] ${ans}`, 'ai');
   } catch (e) {
     clearInterval(thinkingInterval);
@@ -152,16 +168,13 @@ async function generateAI(q, thinkingInterval, thinkingLine) {
 function streamResponse(text, type = '') {
   const line = document.createElement('div');
   line.className = `line ${type} streaming`;
-  line.textContent = ''; // Начинаем пустой
+  line.textContent = '';
   output.appendChild(line);
   let i = 0;
   const int = setInterval(() => {
     if (i < text.length) {
       line.textContent += text[i++];
-      if (typeSound) {
-        typeSound.currentTime = 0;
-        typeSound.play().catch(() => {});
-      }
+      if (typeSound) typeSound.play().catch(() => {});
       output.scrollTop = output.scrollHeight;
     } else {
       clearInterval(int);
@@ -179,10 +192,7 @@ function typeLine(text, type = '') {
   const int = setInterval(() => {
     if (i < text.length) {
       line.textContent += text[i++];
-      if (typeSound) {
-        typeSound.currentTime = 0;
-        typeSound.play().catch(() => {});
-      }
+      if (typeSound) typeSound.play().catch(() => {});
     } else clearInterval(int);
     output.scrollTop = output.scrollHeight;
   }, 25);
