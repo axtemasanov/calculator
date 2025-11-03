@@ -1,34 +1,8 @@
 /* ПРОГРЕСС И ПОТОК ДЛЯ ИИ */
-.progress-line {
-  color: #0f0;
-  animation: pulse 1s infinite;
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
-}
-
-.thinking {
-  color: #ff0;
-  animation: blink 0.5s infinite;
-}
-
-@keyframes blink {
-  0%, 50% { opacity: 1; }
-  51%, 100% { opacity: 0.3; }
-}
-
-.streaming {
-  color: #0f0;
-  animation: type 0.1s infinite; /* Мигающий курсор при печати */
-}
-
-@keyframes type {
-  0%, 100% { border-right: 2px solid #0f0; }
-  50% { border-right: none; }
-}
-
-.bar {
-  color: #0f0;
-}
+.progress-line { color: #0f0; animation: pulse 1s infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+.thinking { color: #ff0; animation: blink 0.5s infinite; }
+@keyframes blink { 0%, 50% { opacity: 1; } 51%, 100% { opacity: 0.3; } }
+.streaming { color: #0f0; animation: type 0.1s infinite; }
+@keyframes type { 0%, 100% { border-right: 2px solid #0f0; } 50% { border-right: none; } }
+.bar { color: #0f0; }
