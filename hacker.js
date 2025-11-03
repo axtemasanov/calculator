@@ -4,16 +4,49 @@ let aiEnabled = false;
 
 const loadAI = async () => {
   if (aiEnabled) return;
-  typeLine("[AI] Загрузка модели... (10-20 сек)", 'system');
+  
+  // Прогресс загрузки модели
+  let progressLine = addProgressLine("[AI] Загрузка модели... [░░░░░░░░░░] 0%");
+  let progress = 0;
+  const progressInterval = setInterval(() => {
+    progress += Math.random() * 20; // Имитация прогресса
+    if (progress > 100) progress = 100;
+    updateProgressBar(progressLine, progress, "Загрузка модели...");
+    if (progress >= 100) clearInterval(progressInterval);
+  }, 2000); // Обновление каждые 2 сек
+
   try {
     const { pipeline } = await import('https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2');
     generator = await pipeline('text-generation', 'Xenova/distilgpt2');
     aiEnabled = true;
-    typeLine("[AI] ГОТОВ. Пиши: ai <вопрос>", 'success');
+    clearInterval(progressInterval);
+    updateProgressBar(progressLine, 100, "[AI] ГОТОВ. Пиши: ai <вопрос>");
+    progressLine.className = 'line success';
   } catch (e) {
-    typeLine("[AI] Ошибка загрузки. Нет интернета?", 'error');
+    clearInterval(progressInterval);
+    updateProgressBar(progressLine, 0, "[AI] Ошибка загрузки. Нет интернета?");
+    progressLine.className = 'line error';
   }
 };
+
+// Функция для создания прогресс-линии
+function addProgressLine(text) {
+  const line = document.createElement('div');
+  line.className = 'line progress-line';
+  line.textContent = text;
+  output.appendChild(line);
+  output.scrollTop = output.scrollHeight;
+  return line;
+}
+
+// Обновление прогресс-бара
+function updateProgressBar(line, percent, text) {
+  const barLength = 10;
+  const filled = Math.floor((percent / 100) * barLength);
+  const bar = '█'.repeat(filled) + '░'.repeat(barLength - filled);
+  line.textContent = `${text} [${bar}] ${Math.floor(percent)}%`;
+  output.scrollTop = output.scrollHeight;
+}
 
 // === ОСНОВНОЙ КОД ===
 const output = document.getElementById('output');
@@ -75,8 +108,20 @@ function processCommand(cmd) {
     const q = cmd.slice(3).trim();
     if (!q) { typeLine("Ошибка: вопрос?", 'error'); return; }
     if (!aiEnabled) { typeLine("Сначала: ai on", 'error'); return; }
-    typeLine(`[AI] Думаю...`, 'system');
-    generateAI(q);
+    
+    // Мигающий "ДУМАЮ..."
+    let thinkingLine = addLine(`[AI] Думаю... [░░░░░░░░░░]`, 'thinking');
+    let dots = 0;
+    const thinkingInterval = setInterval(() => {
+      dots = (dots + 1) % 4;
+      const barLength = 10;
+      const filled = Math.floor(Math.random() * barLength); // Имитация "мышления"
+      const bar = '█'.repeat(filled) + '░'.repeat(barLength - filled);
+      thinkingLine.textContent = `[AI] Думаю${'.'.repeat(dots)} [${bar}]`;
+      output.scrollTop = output.scrollHeight;
+    }, 500); // Мигает каждые 0.5 сек
+
+    generateAI(q, thinkingInterval, thinkingLine);
   } else if (lower.startsWith('msg ')) {
     typeLine(`[ANON] ${cmd.slice(4)}`, 'msg');
   } else if (lower === 'clear') {
@@ -88,12 +133,19 @@ function processCommand(cmd) {
   }
 }
 
-async function generateAI(q) {
+async function generateAI(q, thinkingInterval, thinkingLine) {
   try {
     const res = await generator(`Q: ${q}\nA:`, { max_new_tokens: 50 });
     const ans = res[0].generated_text.split('A:')[1]?.trim() || "Не понял.";
+    
+    // Удаляем мигающий индикатор
+    clearInterval(thinkingInterval);
+    output.removeChild(thinkingLine);
+    
     typeLine(`[AI] ${ans}`, 'ai');
   } catch (e) {
+    clearInterval(thinkingInterval);
+    output.removeChild(thinkingLine);
     typeLine("[AI] Ошибка.", 'error');
   }
 }
@@ -118,6 +170,7 @@ function addLine(text, type = '') {
   line.textContent = text;
   output.appendChild(line);
   output.scrollTop = output.scrollHeight;
+  return line; // Возвращаем для обновления
 }
 
 function hackSimulation() {
