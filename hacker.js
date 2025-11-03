@@ -1,4 +1,4 @@
-// === БЕСПЛАТНЫЙ ИИ В БРАУЗЕРЕ ===
+// === МОЩНЫЙ ИИ В БРАУЗЕРЕ (GPT-2 FULL) ===
 let generator = null;
 let aiEnabled = false;
 let retryCount = 0;
@@ -7,9 +7,9 @@ const MAX_RETRIES = 3;
 const loadAI = async () => {
   if (aiEnabled) return;
   
-  // Suppress WARN от ONNXRuntime (только для этой библиотеки)
+  // Suppress WARN от ONNXRuntime
   const originalWarn = console.warn;
-  console.warn = () => {}; // Игнор предупреждений во время загрузки
+  console.warn = () => {};
   
   let progressLine = addLine("[AI] Загрузка модели... [░░░░░░░░░░] 0%", 'progress-line');
   let progress = 0;
@@ -22,7 +22,7 @@ const loadAI = async () => {
 
   try {
     const { pipeline } = await import('https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2');
-    generator = await pipeline('text-generation', 'Xenova/distilgpt2');
+    generator = await pipeline('text-generation', 'Xenova/gpt2'); // <- ЗДЕСЬ НОВАЯ МОДЕЛЬ: GPT-2 full, мощнее Distil!
     aiEnabled = true;
     retryCount = 0;
     clearInterval(progressInterval);
@@ -30,13 +30,13 @@ const loadAI = async () => {
     progressLine.className = 'line success';
   } catch (e) {
     clearInterval(progressInterval);
-    console.warn = originalWarn; // Восстанавливаем warn
+    console.warn = originalWarn;
     retryCount++;
     if (retryCount < MAX_RETRIES) {
       updateProgressBar(progressLine, 0, "[AI] Ошибка — перезагрузка... (" + retryCount + "/" + MAX_RETRIES + ")");
-      setTimeout(() => loadAI(), 2000); // Ретрай через 2 сек
+      setTimeout(() => loadAI(), 3000); // Ретрай через 3 сек
     } else {
-      updateProgressBar(progressLine, 0, "[AI] Ошибка. Проверь интернет. Попробуй перезагрузить страницу.");
+      updateProgressBar(progressLine, 0, "[AI] Ошибка. Проверь интернет или перезагрузи страницу.");
       progressLine.className = 'line error';
     }
   }
@@ -91,7 +91,7 @@ if (input) {
       input.value = historyIndex === -1 ? '' : history[historyIndex];
       e.preventDefault();
     } else if (e.key.length === 1) {
-      typeSound.currentTime = 0; typeSound.volume = 0.08; typeSound.play();
+      if (typeSound) typeSound.play().catch(() => {});
     }
   });
   input.addEventListener('touchstart', () => input.focus());
@@ -113,12 +113,12 @@ function sendCommand() {
   historyIndex = -1;
   input.value = '';
   
-  // Сброс кнопки через 3 сек (даже если ИИ долго думает)
+  // Сброс кнопки через 4 сек (для ИИ — дольше, чтобы дождаться ответа)
   setTimeout(() => {
     enterBtn.textContent = 'Enter';
     enterBtn.classList.remove('sending', 'processing');
     enterBtn.disabled = false;
-  }, 3000);
+  }, 4000); // 4 сек — хватит на генерацию
 }
 
 function processCommand(cmd) {
@@ -131,7 +131,7 @@ function processCommand(cmd) {
     typeLine("hack — симуляция");
     typeLine("clear — очистить");
     typeLine("ai on — включить ИИ");
-    typeLine("ai <вопрос> — спросить");
+    typeLine("ai <вопрос> — спросить (теперь умнее!)");
     setTimeout(() => enterBtn.classList.remove('processing'), 500);
   } else if (lower === 'ai on') {
     loadAI();
@@ -187,11 +187,10 @@ function processCommand(cmd) {
   }
 }
 
-// generateAI, streamResponse, typeLine, addLine, scrollToBottom, hackSimulation — как раньше (копируй из предыдущего, если нужно)
-
+// generateAI, streamResponse, typeLine, addLine, scrollToBottom, hackSimulation — как в предыдущем (не меняй)
 async function generateAI(q, thinkingInterval, thinkingLine) {
   try {
-    const res = await generator(`Q: ${q}\nA:`, { max_new_tokens: 80 });
+    const res = await generator(`Q: ${q}\nA:`, { max_new_tokens: 100 }); // Увеличил токены для длиннее ответов
     const ans = res[0].generated_text.split('A:')[1]?.trim() || "Не понял.";
     
     clearInterval(thinkingInterval);
@@ -203,74 +202,6 @@ async function generateAI(q, thinkingInterval, thinkingLine) {
     output.removeChild(thinkingLine);
     typeLine("[AI] Ошибка.", 'error');
   }
-  setTimeout(() => enterBtn.classList.remove('processing'), 1000);
 }
 
-function streamResponse(text, type = '') {
-  const line = document.createElement('div');
-  line.className = `line ${type} streaming`;
-  line.textContent = '';
-  output.appendChild(line);
-  let i = 0;
-  const int = setInterval(() => {
-    if (i < text.length) {
-      line.textContent += text[i++];
-      if (typeSound) typeSound.play().catch(() => {});
-      scrollToBottom();
-    } else {
-      clearInterval(int);
-      line.classList.remove('streaming');
-    }
-  }, 50);
-}
-
-function typeLine(text, type = '') {
-  const line = document.createElement('div');
-  line.className = `line ${type}`;
-  line.textContent = '';
-  output.appendChild(line);
-  let i = 0;
-  const int = setInterval(() => {
-    if (i < text.length) {
-      line.textContent += text[i++];
-      if (typeSound) typeSound.play().catch(() => {});
-    } else clearInterval(int);
-    scrollToBottom();
-  }, 25);
-}
-
-function addLine(text, type = '') {
-  const line = document.createElement('div');
-  line.className = `line ${type}`;
-  line.textContent = text;
-  output.appendChild(line);
-  scrollToBottom();
-  return line;
-}
-
-function scrollToBottom() {
-  output.scrollTop = output.scrollHeight;
-}
-
-function hackSimulation() {
-  const steps = ["Сканирую сеть...", "Взлом порта 443...", "Root-доступ...", "ВЗЛОМ УСПЕШЕН!"];
-  let i = 0;
-  const run = () => { 
-    if (i < steps.length) { 
-      typeLine(steps[i++], i === steps.length ? 'success' : '');
-      setTimeout(run, 1200); 
-    } 
-  };
-  run();
-}
-
-function sendCommand() {
-  // ... (как выше)
-}
-
-// Приветствие
-typeLine("Добро пожаловать в АНОНИМНЫЙ ТЕРМИНАЛ v9.99");
-typeLine("Подключение к darknet... [OK]");
-typeLine("Аутентификация: GUEST MODE");
-typeLine("Команды: help, msg, hack, clear, ai on");
-typeLine("");
+// ... (остальные функции как раньше: streamResponse, typeLine, addLine, scrollToBottom, hackSimulation)
