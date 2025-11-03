@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>TERMINAL CHAT</title>
   <link rel="stylesheet" href="hacker.css"/>
   <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
@@ -24,15 +24,14 @@
       <span class="prompt">guest@anon:~$</span>
       <input type="text" id="cmd" autocomplete="off" autofocus placeholder="введи команду..." />
       <span class="cursor">█</span>
-      <button id="enterBtn" class="enter-btn">Enter</button>
+      <button class="enter-btn" onclick="sendCommand()">Enter</button>
     </div>
   </div>
 
   <audio id="typeSound" src="https://assets.mixkit.co/sfx/preview/mixkit-fast-keyboard-typing-2324.mp3" preload="auto"></audio>
   <script src="hacker.js"></script>
   <script>
-    // Глобальная кнопка Enter (для мобильного)
-    document.getElementById('enterBtn').onclick = function() {
+    function sendCommand() {
       const input = document.getElementById('cmd');
       const cmd = input.value.trim();
       if (cmd) {
@@ -42,12 +41,7 @@
         historyIndex = -1;
       }
       input.value = '';
-    };
-
-    // Touch fallback: тап на поле — фокус
-    document.getElementById('cmd').addEventListener('touchstart', function() {
-      this.focus();
-    });
+    }
   </script>
 </body>
 </html>
