@@ -19,11 +19,21 @@ body {
   background: #000;
   border: 2px solid #0f0;
   border-radius: 8px;
-  box-shadow: 0 0 20px #0f0, 0 0 40px #0f0, inset 0 0 20px rgba(0,255,0,0.1);
+  box-shadow: 
+    0 0 20px #0f0, 
+    0 0 40px #0f0, 
+    0 0 60px #0f0, 
+    inset 0 0 20px rgba(0,255,0,0.1);
   position: relative;
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  animation: glow 2s infinite alternate; /* Неоновое свечение */
+}
+
+@keyframes glow {
+  0% { box-shadow: 0 0 20px #0f0, 0 0 40px #0f0; }
+  100% { box-shadow: 0 0 30px #0f0, 0 0 60px #0f0, 0 0 80px #0f0; }
 }
 
 .header {
@@ -34,17 +44,19 @@ body {
   align-items: center;
   border-bottom: 1px solid #0f0;
   flex-shrink: 0;
+  text-shadow: 0 0 5px #0f0; /* Свечение заголовка */
 }
 
-.title { font-size: 1.2rem; letter-spacing: 1px; }
+.title { font-size: 1.2rem; letter-spacing: 1px; color: #0f0; text-shadow: 0 0 10px #0f0; }
 
 .controls .dot {
   width: 12px; height: 12px; border-radius: 50%; margin-left: 6px;
   display: inline-block;
+  box-shadow: 0 0 8px currentColor;
 }
-.red { background: #f00; box-shadow: 0 0 8px #f00; }
-.yellow { background: #ff0; box-shadow: 0 0 8px #ff0; }
-.green { background: #0f0; box-shadow: 0 0 8px #0f0; }
+.red { background: #f00; }
+.yellow { background: #ff0; }
+.green { background: #0f0; }
 
 .output {
   flex: 1;
@@ -53,12 +65,13 @@ body {
   line-height: 1.6;
   font-size: 1.3rem;
   min-height: 0;
+  background: rgba(0,0,0,0.8);
 }
 .output::-webkit-scrollbar { width: 8px; }
 .output::-webkit-scrollbar-track { background: #000; }
-.output::-webkit-scrollbar-thumb { background: #0f0; border-radius: 4px; }
+.output::-webkit-scrollbar-thumb { background: #0f0; border-radius: 4px; box-shadow: 0 0 5px #0f0; }
 
-.line { margin: 4px 0; opacity: 0; animation: fadeIn 0.3s forwards; }
+.line { margin: 4px 0; opacity: 0; animation: fadeIn 0.3s forwards; text-shadow: 0 0 3px #0f0; }
 @keyframes fadeIn { to { opacity: 1; } }
 
 .input-line {
@@ -70,7 +83,7 @@ body {
   flex-shrink: 0;
 }
 
-.prompt { color: #0f0; margin-right: 8px; white-space: nowrap; }
+.prompt { color: #0f0; margin-right: 8px; white-space: nowrap; text-shadow: 0 0 5px #0f0; }
 #cmd {
   background: transparent;
   border: none;
@@ -80,50 +93,66 @@ body {
   flex: 1;
   outline: none;
   min-width: 0;
+  text-shadow: 0 0 3px #0f0;
 }
-.cursor { animation: blink 1s infinite; color: #0f0; margin-left: 2px; }
+.cursor { animation: blink 1s infinite; color: #0f0; margin-left: 2px; text-shadow: 0 0 5px #0f0; }
 @keyframes blink { 0%,50% { opacity: 1; } 51%,100% { opacity: 0; } }
 
 /* СТИЛИ ДЛЯ СООБЩЕНИЙ */
 .line.ai { color: #0f0; text-shadow: 0 0 8px #0f0; font-style: italic; }
-.line.success { color: #0f0; }
-.line.error { color: #f00; }
-.line.msg { color: #ff0; }
+.line.success { color: #0f0; text-shadow: 0 0 5px #0f0; }
+.line.error { color: #f00; text-shadow: 0 0 5px #f00; }
+.line.msg { color: #ff0; text-shadow: 0 0 5px #ff0; }
 .line.system { color: #888; }
-.line.input { color: #0f0; }
+.line.input { color: #0f0; text-shadow: 0 0 3px #0f0; }
 
-/* CRT ЭФФЕКТ */
+/* CRT + ГЛЮКИ (усилено) */
 .terminal::before {
   content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
   background: repeating-linear-gradient(0deg, rgba(0,0,0,0.15), rgba(0,0,0,0.15) 1px, transparent 1px, transparent 2px);
   pointer-events: none; z-index: 1;
+  animation: scan 3s linear infinite; /* Линия сканирования */
 }
+
+@keyframes scan {
+  0% { background-position: 0 0; }
+  100% { background-position: 0 100vh; }
+}
+
 .terminal::after {
   content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-  background: radial-gradient(circle at center, transparent 0%, rgba(0,255,0,0.03) 100%);
-  animation: flicker 3s infinite; pointer-events: none; z-index: 2;
+  background: radial-gradient(circle at center, transparent 0%, rgba(0,255,0,0.05) 100%);
+  animation: flicker 0.15s infinite; pointer-events: none; z-index: 2;
 }
 @keyframes flicker { 0%,100% { opacity: 0.98; } 50% { opacity: 1; } }
 
-/* ТРЕЩИНЫ */
+/* ТРЕЩИНЫ (больше и динамичнее) */
 .crack {
   position: absolute; width: 3px; height: 100px;
   background: linear-gradient(to bottom, #0f0, transparent);
   transform: rotate(45deg); opacity: 0.3; pointer-events: none;
   animation: crackle 5s infinite;
 }
-@keyframes crackle { 0%,100% { opacity: 0.1; } 50% { opacity: 0.4; } }
+@keyframes crackle { 0%,100% { opacity: 0.1; } 50% { opacity: 0.5; transform: rotate(45deg) scale(1.1); } }
+
+for (let i = 0; i < 5; i++) { // Добавь 5 трещин в JS
+  const crack = document.createElement('div');
+  crack.className = 'crack';
+  crack.style.left = Math.random() * 100 + '%';
+  crack.style.top = Math.random() * 100 + '%';
+  document.querySelector('.terminal').appendChild(crack);
+}
 
 /* ПРОГРЕСС И ПОТОК */
-.progress-line { color: #0f0; animation: pulse 1s infinite; }
+.progress-line { color: #0f0; animation: pulse 1s infinite; text-shadow: 0 0 5px #0f0; }
 @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-.thinking { color: #ff0; animation: blink 0.5s infinite; }
+.thinking { color: #ff0; animation: blink 0.5s infinite; text-shadow: 0 0 5px #ff0; }
 @keyframes blink { 0%, 50% { opacity: 1; } 51%, 100% { opacity: 0.3; } }
-.streaming { color: #0f0; animation: type 0.1s infinite; }
+.streaming { color: #0f0; animation: type 0.1s infinite; text-shadow: 0 0 3px #0f0; }
 @keyframes type { 0%, 100% { border-right: 2px solid #0f0; } 50% { border-right: none; } }
-.bar { color: #0f0; }
+.bar { color: #0f0; text-shadow: 0 0 3px #0f0; }
 
-/* Кнопка Enter для мобильного */
+/* Кнопка Enter */
 .enter-btn {
   background: #0f0;
   color: #000;
@@ -133,11 +162,14 @@ body {
   cursor: pointer;
   font-family: 'VT323', monospace;
   font-size: 1rem;
+  box-shadow: 0 0 5px #0f0;
+  transition: all 0.2s;
 }
-.enter-btn:hover { background: #00ff00; }
+.enter-btn:hover { background: #00ff00; box-shadow: 0 0 10px #0f0; }
 
 @media (max-width: 600px) {
   .terminal { height: 95vh; }
   .output, #cmd { font-size: 1.1rem; }
   .title { font-size: 1rem; }
+  .enter-btn { padding: 3px 8px; font-size: 0.9rem; }
 }
