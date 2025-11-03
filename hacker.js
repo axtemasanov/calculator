@@ -6,7 +6,7 @@ const loadAI = async () => {
   if (aiEnabled) return;
   
   // Прогресс загрузки модели
-  let progressLine = addProgressLine("[AI] Загрузка модели... [░░░░░░░░░░] 0%");
+  let progressLine = addLine("[AI] Загрузка модели... [░░░░░░░░░░] 0%", 'progress-line');
   let progress = 0;
   const progressInterval = setInterval(() => {
     progress += Math.random() * 20;
@@ -29,16 +29,6 @@ const loadAI = async () => {
   }
 };
 
-// Функции для прогресса
-function addProgressLine(text) {
-  const line = document.createElement('div');
-  line.className = 'line progress-line';
-  line.textContent = text;
-  output.appendChild(line);
-  output.scrollTop = output.scrollHeight;
-  return line;
-}
-
 function updateProgressBar(line, percent, text) {
   const barLength = 10;
   const filled = Math.floor((percent / 100) * barLength);
@@ -54,13 +44,15 @@ const typeSound = document.getElementById('typeSound');
 let history = [], historyIndex = -1;
 
 // Эффекты
-document.querySelector('.terminal').classList.add('crt');
-for (let i = 0; i < 3; i++) {
-  const crack = document.createElement('div');
-  crack.className = 'crack';
-  crack.style.left = Math.random() * 100 + '%';
-  crack.style.top = Math.random() * 100 + '%';
-  document.querySelector('.terminal').appendChild(crack);
+if (document.querySelector('.terminal')) {
+  document.querySelector('.terminal').classList.add('crt');
+  for (let i = 0; i < 3; i++) {
+    const crack = document.createElement('div');
+    crack.className = 'crack';
+    crack.style.left = Math.random() * 100 + '%';
+    crack.style.top = Math.random() * 100 + '%';
+    document.querySelector('.terminal').appendChild(crack);
+  }
 }
 
 // Приветствие
@@ -71,30 +63,37 @@ typeLine("Команды: help, msg, hack, clear, ai on");
 typeLine("");
 
 // Ввод
-input.addEventListener('keydown', e => {
-  if (e.key === 'Enter') {
-    const cmd = input.value.trim();
-    if (cmd) {
-      addLine(`guest@anon:~$ ${cmd}`, 'input');
-      processCommand(cmd);
-      history.unshift(cmd); historyIndex = -1;
+if (input) {
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      const cmd = input.value.trim();
+      if (cmd) {
+        addLine(`guest@anon:~$ ${cmd}`, 'input');
+        processCommand(cmd);
+        history.unshift(cmd);
+        historyIndex = -1;
+      }
+      input.value = '';
+    } else if (e.key === 'ArrowUp' && history.length) {
+      historyIndex = Math.min(historyIndex + 1, history.length - 1);
+      input.value = history[historyIndex] || '';
+      e.preventDefault();
+    } else if (e.key === 'ArrowDown') {
+      historyIndex = Math.max(historyIndex - 1, -1);
+      input.value = historyIndex === -1 ? '' : history[historyIndex];
+      e.preventDefault();
+    } else if (e.key.length === 1) {
+      if (typeSound) {
+        typeSound.currentTime = 0;
+        typeSound.volume = 0.08;
+        typeSound.play().catch(() => {}); // Игнор ошибок на мобильном
+      }
     }
-    input.value = '';
-  } else if (e.key === 'ArrowUp' && history.length) {
-    historyIndex = Math.min(historyIndex + 1, history.length - 1);
-    input.value = history[historyIndex] || '';
-    e.preventDefault();
-  } else if (e.key === 'ArrowDown') {
-    historyIndex = Math.max(historyIndex - 1, -1);
-    input.value = historyIndex === -1 ? '' : history[historyIndex];
-    e.preventDefault();
-  } else if (e.key.length === 1) {
-    typeSound.currentTime = 0; typeSound.volume = 0.08; typeSound.play();
-  }
-});
+  });
+}
 
 function processCommand(cmd) {
-  const lower = cmd.toLowerCase();
+  const lower = cmd.toLowerCase().trim(); // Улучшил для русского
   if (lower === 'help') {
     typeLine("msg <текст> — анонимка");
     typeLine("hack — симуляция");
@@ -114,11 +113,11 @@ function processCommand(cmd) {
     let barPos = 0;
     const thinkingInterval = setInterval(() => {
       dots = (dots + 1) % 4;
-      barPos = (barPos + 1) % 10; // Циклический бар
+      barPos = (barPos + 1) % 10;
       const bar = '█'.repeat(barPos) + '░'.repeat(10 - barPos);
       thinkingLine.textContent = `[AI] Думаю${'.'.repeat(dots)} [${bar}]`;
       output.scrollTop = output.scrollHeight;
-    }, 500); // Мигает каждые 0.5 сек
+    }, 500);
 
     generateAI(q, thinkingInterval, thinkingLine);
   } else if (lower.startsWith('msg ')) {
@@ -134,14 +133,14 @@ function processCommand(cmd) {
 
 async function generateAI(q, thinkingInterval, thinkingLine) {
   try {
-    const res = await generator(`Q: ${q}\nA:`, { max_new_tokens: 80 }); // Увеличил до 80 токенов для длиннее ответов
+    const res = await generator(`Q: ${q}\nA:`, { max_new_tokens: 80 });
     const ans = res[0].generated_text.split('A:')[1]?.trim() || "Не понял.";
     
-    // Удаляем индикатор "ДУМАЮ..."
+    // Удаляем индикатор
     clearInterval(thinkingInterval);
     output.removeChild(thinkingLine);
     
-    // Печатаем ответ посимвольно (поток)
+    // Потоковая печать
     streamResponse(`[AI] ${ans}`, 'ai');
   } catch (e) {
     clearInterval(thinkingInterval);
@@ -150,33 +149,40 @@ async function generateAI(q, thinkingInterval, thinkingLine) {
   }
 }
 
-// Потоковая печать ответа (симулирует streaming)
 function streamResponse(text, type = '') {
   const line = document.createElement('div');
   line.className = `line ${type} streaming`;
+  line.textContent = ''; // Начинаем пустой
   output.appendChild(line);
   let i = 0;
   const int = setInterval(() => {
     if (i < text.length) {
       line.textContent += text[i++];
-      typeSound.currentTime = 0; typeSound.play();
+      if (typeSound) {
+        typeSound.currentTime = 0;
+        typeSound.play().catch(() => {});
+      }
       output.scrollTop = output.scrollHeight;
     } else {
       clearInterval(int);
-      line.classList.remove('streaming'); // Убираем мигающий курсор
+      line.classList.remove('streaming');
     }
-  }, 50); // Печатает каждые 50 мс (быстро, как поток)
+  }, 50);
 }
 
 function typeLine(text, type = '') {
   const line = document.createElement('div');
   line.className = `line ${type}`;
+  line.textContent = '';
   output.appendChild(line);
   let i = 0;
   const int = setInterval(() => {
     if (i < text.length) {
       line.textContent += text[i++];
-      typeSound.currentTime = 0; typeSound.play();
+      if (typeSound) {
+        typeSound.currentTime = 0;
+        typeSound.play().catch(() => {});
+      }
     } else clearInterval(int);
     output.scrollTop = output.scrollHeight;
   }, 25);
