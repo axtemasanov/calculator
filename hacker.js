@@ -1,4 +1,4 @@
-// === УМНЫЙ РУССКИЙ ИИ (RUGPT-3 SMALL) ===
+// === УМНЫЙ РУССКИЙ ИИ (RUGPT-3 SMALL + FIXED PROMPT) ===
 let generator = null;
 let aiEnabled = false;
 let retryCount = 0;
@@ -27,7 +27,7 @@ const loadAI = async () => {
 
   try {
     const { pipeline } = await import('https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2');
-    generator = await pipeline('text-generation', 'Xenova/sberbank-ai/rugpt3small_based_on_gpt2'); // <- РУССКАЯ МОДЕЛЬ: RuGPT-3 Small, супер на русском!
+    generator = await pipeline('text-generation', 'Xenova/sberbank-ai/rugpt3small_based_on_gpt2');
     aiEnabled = true;
     retryCount = 0;
     clearInterval(progressInterval);
@@ -190,20 +190,20 @@ function processCommand(cmd) {
   }
 }
 
-// generateAI (усиленный промпт для русского)
+// generateAI (усиленный промпт)
 async function generateAI(q, thinkingInterval, thinkingLine) {
   try {
-    const prompt = `Ты — умный хакерский ассистент на русском языке. Отвечай подробно, но кратко, логично, без повторения вопроса или текста. Будь полезным напарником, используй юмор, как в darknet. Пример ответа: Q: Что ты умеешь? A: Я генерирую код для взлома, считаю математику, симулирую атаки, отвечаю на вопросы по киберу. Давай взломаем? Q: ${q}\nA:`; // Пример учит не повторять
+    const prompt = `Ты — умный хакерский ассистент в терминале. Отвечай на русском, кратко, логично, подробно, но без повторения вопроса или текста. Будь полезным, как напарник в darknet. Не спамь, не галлюцинируй, отвечай на основе вопроса. Пример: Q: Что ты умеешь? A: Я умею генерировать код, считать математику, взламывать симуляции, отвечать на вопросы по киберу. Давай взломаем? Q: ${q}\nA:`; 
     const res = await generator(prompt, { 
       max_new_tokens: 150,
       temperature: 0.7,
       top_p: 0.9,
       do_sample: true,
-      repetition_penalty: 1.4 // Максимум против повторений
+      repetition_penalty: 1.4
     });
     let ans = res[0].generated_text.split('A:')[1]?.trim() || "Не понял.";
     
-    // Post-processing
+    // Post-processing: Удаляем повторения и обрезаем
     ans = ans.replace(/(\b\w+\b)(?=\s+\1)/g, '');
     ans = ans.substring(0, 300) + (ans.length > 300 ? '...' : '');
     
@@ -218,7 +218,7 @@ async function generateAI(q, thinkingInterval, thinkingLine) {
   }
 }
 
-// Остальные функции (streamResponse, typeLine, addLine, scrollToBottom, hackSimulation) — как раньше (не меняй)
+// Остальные функции (streamResponse, typeLine, addLine, scrollToBottom, hackSimulation) — как раньше
 function streamResponse(text, type = '') {
   const line = document.createElement('div');
   line.className = `line ${type} streaming`;
