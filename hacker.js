@@ -1,5 +1,14 @@
-// === ГЛОБАЛЬНЫЙ processCommand для кнопки ===
-window.processCommand = function(cmd) {
+// Глобальные переменные
+let generator = null;
+let aiEnabled = false;
+let history = [];
+let historyIndex = -1;
+let output = document.getElementById('output');
+let input = document.getElementById('cmd');
+let typeSound = document.getElementById('typeSound');
+
+// Глобальная функция processCommand
+function processCommand(cmd) {
   const lower = cmd.toLowerCase().trim();
   if (lower === 'help') {
     typeLine("msg <текст> — анонимка");
@@ -22,7 +31,7 @@ window.processCommand = function(cmd) {
       barPos = (barPos + 1) % 10;
       const bar = '█'.repeat(barPos) + '░'.repeat(10 - barPos);
       thinkingLine.textContent = `[AI] Думаю${'.'.repeat(dots)} [${bar}]`;
-      output.scrollTop = output.scrollHeight;
+      scrollToBottom();
     }, 500);
 
     generateAI(q, thinkingInterval, thinkingLine);
@@ -35,12 +44,9 @@ window.processCommand = function(cmd) {
   } else {
     typeLine(`bash: ${cmd}: не найдено`, 'error');
   }
-};
+}
 
-// Остальной код (loadAI, generateAI, typeLine и т.д.) — как в предыдущем сообщении
-let generator = null;
-let aiEnabled = false;
-
+// Загрузка ИИ
 const loadAI = async () => {
   if (aiEnabled) return;
   
@@ -72,51 +78,10 @@ function updateProgressBar(line, percent, text) {
   const filled = Math.floor((percent / 100) * barLength);
   const bar = '█'.repeat(filled) + '░'.repeat(barLength - filled);
   line.textContent = `${text} [${bar}] ${Math.floor(percent)}%`;
-  output.scrollTop = output.scrollHeight;
+  scrollToBottom();
 }
 
-const output = document.getElementById('output');
-const input = document.getElementById('cmd');
-const typeSound = document.getElementById('typeSound');
-let history = [], historyIndex = -1;
-
-const terminal = document.querySelector('.terminal');
-if (terminal) {
-  terminal.classList.add('crt');
-  for (let i = 0; i < 3; i++) {
-    const crack = document.createElement('div');
-    crack.className = 'crack';
-    crack.style.left = Math.random() * 100 + '%';
-    crack.style.top = Math.random() * 100 + '%';
-    terminal.appendChild(crack);
-  }
-}
-
-// Приветствие
-typeLine("Добро пожаловать в АНОНИМНЫЙ ТЕРМИНАЛ v9.99");
-typeLine("Подключение к darknet... [OK]");
-typeLine("Аутентификация: GUEST MODE");
-typeLine("Команды: help, msg, hack, clear, ai on");
-typeLine("");
-
-// Ввод (keydown)
-if (input) {
-  input.addEventListener('keydown', e => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      const cmd = input.value.trim();
-      if (cmd) {
-        addLine(`guest@anon:~$ ${cmd}`, 'input');
-        window.processCommand(cmd);
-        history.unshift(cmd);
-        historyIndex = -1;
-      }
-      input.value = '';
-    } // ... остальное как раньше
-  });
-}
-
-// Остальные функции (generateAI, streamResponse, typeLine, addLine, hackSimulation) — как в предыдущем коде
+// Генерация ИИ
 async function generateAI(q, thinkingInterval, thinkingLine) {
   try {
     const res = await generator(`Q: ${q}\nA:`, { max_new_tokens: 80 });
@@ -133,6 +98,7 @@ async function generateAI(q, thinkingInterval, thinkingLine) {
   }
 }
 
+// Поток ответа
 function streamResponse(text, type = '') {
   const line = document.createElement('div');
   line.className = `line ${type} streaming`;
@@ -143,7 +109,7 @@ function streamResponse(text, type = '') {
     if (i < text.length) {
       line.textContent += text[i++];
       if (typeSound) typeSound.play().catch(() => {});
-      output.scrollTop = output.scrollHeight;
+      scrollToBottom();
     } else {
       clearInterval(int);
       line.classList.remove('streaming');
@@ -151,6 +117,7 @@ function streamResponse(text, type = '') {
   }, 50);
 }
 
+// Печать посимвольно
 function typeLine(text, type = '') {
   const line = document.createElement('div');
   line.className = `line ${type}`;
@@ -162,19 +129,26 @@ function typeLine(text, type = '') {
       line.textContent += text[i++];
       if (typeSound) typeSound.play().catch(() => {});
     } else clearInterval(int);
-    output.scrollTop = output.scrollHeight;
+    scrollToBottom();
   }, 25);
 }
 
+// Добавление строки
 function addLine(text, type = '') {
   const line = document.createElement('div');
   line.className = `line ${type}`;
   line.textContent = text;
   output.appendChild(line);
-  output.scrollTop = output.scrollHeight;
+  scrollToBottom();
   return line;
 }
 
+// Скролл вниз
+function scrollToBottom() {
+  output.scrollTop = output.scrollHeight;
+}
+
+// Симуляция взлома
 function hackSimulation() {
   const steps = ["Сканирую сеть...", "Взлом порта 443...", "Root-доступ...", "ВЗЛОМ УСПЕШЕН!"];
   let i = 0;
@@ -185,4 +159,53 @@ function hackSimulation() {
     } 
   };
   run();
+}
+
+// Эффекты (при загрузке)
+const terminal = document.querySelector('.terminal');
+if (terminal) {
+  terminal.classList.add('crt');
+  for (let i = 0; i < 3; i++) {
+    const crack = document.createElement('div');
+    crack.className = 'crack';
+    crack.style.left = Math.random() * 100 + '%';
+    crack.style.top = Math.random() * 100 + '%';
+    terminal.appendChild(crack);
+  }
+}
+
+// Приветствие (при загрузке)
+typeLine("Добро пожаловать в АНОНИМНЫЙ ТЕРМИНАЛ v9.99");
+typeLine("Подключение к darknet... [OK]");
+typeLine("Аутентификация: GUEST MODE");
+typeLine("Команды: help, msg, hack, clear, ai on");
+typeLine("");
+
+// Ввод (keydown)
+if (input) {
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const cmd = input.value.trim();
+      if (cmd) {
+        addLine(`guest@anon:~$ ${cmd}`, 'input');
+        processCommand(cmd);
+        history.unshift(cmd);
+        historyIndex = -1;
+      }
+      input.value = '';
+    } else if (e.key === 'ArrowUp' && history.length) {
+      historyIndex = Math.min(historyIndex + 1, history.length - 1);
+      input.value = history[historyIndex] || '';
+      e.preventDefault();
+    } else if (e.key === 'ArrowDown') {
+      historyIndex = Math.max(historyIndex - 1, -1);
+      input.value = historyIndex === -1 ? '' : history[historyIndex];
+      e.preventDefault();
+    } else if (e.key.length === 1) {
+      if (typeSound) typeSound.play().catch(() => {});
+    }
+  });
+
+  input.addEventListener('touchstart', () => input.focus());
 }
