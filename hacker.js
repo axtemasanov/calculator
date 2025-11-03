@@ -1,4 +1,4 @@
-// === УМНЫЙ РУССКИЙ ИИ (RUGPT-3 SMALL + FEW-SHOT PROMPT) ===
+// === УМНЫЙ РУССКИЙ ИИ (RUGPT-3 SMALL + ZERO-SHOT ANTI-ECHO) ===
 let generator = null;
 let aiEnabled = false;
 let retryCount = 0;
@@ -190,37 +190,32 @@ function processCommand(cmd) {
   }
 }
 
-// generateAI (усиленный промпт с few-shot для логики)
+// generateAI (новая логика — zero-shot + fallback)
 async function generateAI(q, thinkingInterval, thinkingLine) {
   try {
-    // Few-shot: Примеры "учат" модель отвечать без повторения
-    const prompt = `Ты — умный хакерский ассистент. Отвечай на русском, кратко, логично, подробно, без повторения вопроса. Будь полезным напарником.  
-Q: Что ты умеешь? A: Я генерирую код, считаю математику, взламываю симуляции, отвечаю на вопросы по киберу. Давай взломаем?  
-Q: Как взломать WiFi? A: Используй aircrack-ng: 1. airodump-ng wlan0 для скана. 2. airocrack-ng -w wordlist -b BSSID capture.cap для brute-force. Будь осторожен, это нелегально.  
-Q: ${q}\nA:`; // Few-shot: 2 примера "учат" не повторять
+    // Zero-shot: Простой промпт без примеров, чтобы модель "продолжала" без эха
+    const prompt = `A: ${q}?`; // Простой: "A: [вопрос]?" — модель продолжает как ответ
     const res = await generator(prompt, { 
       max_new_tokens: 150,
-      temperature: 0.7,
+      temperature: 0.8,
       top_p: 0.9,
       do_sample: true,
-      repetition_penalty: 1.5, // Ещё сильнее
-      pad_token_id: generator.tokenizer.eos_token_id // Конец предложения
+      repetition_penalty: 2.0, // Максимум — режет повторы жёстко
+      no_repeat_ngram_size: 3, // Не повторять 3-граммы
+      pad_token_id: generator.tokenizer.eos_token_id
     });
-    let ans = res[0].generated_text.split('A:')[1]?.trim() || "Не понял.";
+    let ans = res[0].generated_text.trim();
     
-    // Улучшенный парсинг: Если 'A:' не нашлось, берём после \n
-    if (!ans) {
-      ans = res[0].generated_text.split('\n')[res[0].generated_text.split('\n').length - 1].trim();
+    // Fallback-парсинг: Берём всё после 'A:', если есть, иначе всё, и удаляем вопрос
+    if (ans.includes('A:')) {
+      ans = ans.split('A:')[1].trim();
     }
+    ans = ans.replace(new RegExp(q, 'i'), '').trim(); // Удаляем вопрос
+    if (!ans || ans.length < 5) ans = "Я — хакерский ассистент. Умею генерировать код, считать математику, взламывать симуляции, отвечать на вопросы по киберу. Что взломаем?";
     
-    // Post-processing: Удаляем вопрос, повторения, обрезаем
-    ans = ans.replace(new RegExp(q, 'i'), ''); // Удаляем вопрос (case-insensitive)
-    ans = ans.replace(/(\b\w+\b)(?=\s+\1)/g, ''); // Удаляем повторяющиеся слова
+    // Post-processing: Удаляем повторения
+    ans = ans.replace(/(\b\w+\b)(?=\s+\1)/g, '');
     ans = ans.substring(0, 300) + (ans.length > 300 ? '...' : '');
-    
-    if (ans.startsWith('?') || ans.includes(lower)) { // Если всё равно эхо — добавляем префикс
-      ans = "Ответ: " + ans;
-    }
     
     clearInterval(thinkingInterval);
     output.removeChild(thinkingLine);
