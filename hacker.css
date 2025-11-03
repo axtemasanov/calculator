@@ -1,33 +1,4 @@
-* { margin: 0; padding: 0; box-sizing: border-box; }
-
-body {
-  background: #000;
-  color: #0f0;
-  font-family: 'VT323', monospace;
-  overflow: hidden;
-  height: 100dvh; /* Динамическая высота — игнорирует тулбар */
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 10px;
-}
-
-.terminal {
-  width: 100%;
-  max-width: 900px;
-  height: 100dvh; /* Динамическая высота — поле ввода всегда видно */
-  background: #000;
-  border: 2px solid #0f0;
-  border-radius: 8px;
-  box-shadow: 0 0 20px #0f0, 0 0 40px #0f0, inset 0 0 20px rgba(0,255,0,0.1);
-  position: relative;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-}
-
-/* Остальные стили (header, output, line, input-line, prompt, #cmd, cursor, .line.ai и т.д.) — как в предыдущем сообщении, без изменений */
-
+/* АДАПТАЦИЯ ПОД МОБИЛЬНЫЙ (поле ввода всегда видно) */
 .input-line {
   display: flex;
   align-items: center;
@@ -35,12 +6,15 @@ body {
   background: rgba(0,255,0,0.05);
   border-top: 1px dashed #0f0;
   flex-shrink: 0;
-  position: sticky;
-  bottom: 0; /* Фиксирует внизу, чтобы не скрывался под клавиатурой */
-  z-index: 10;
+  position: fixed; /* Фиксируем внизу экрана */
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000; /* Выше всего */
+  padding-bottom: env(safe-area-inset-bottom); /* Учёт тулбара/нотификаций */
+  box-shadow: 0 -2px 10px rgba(0,255,0,0.5); /* Тень сверху для стиля */
 }
 
-/* Для мобильного: поле ввода всегда на виду */
 #cmd {
   background: transparent;
   border: none;
@@ -50,8 +24,25 @@ body {
   flex: 1;
   outline: none;
   min-width: 0;
-  position: relative;
-  z-index: 11;
+  padding: 5px; /* Отступ внутри поля */
 }
 
-/* Остальные стили (CRT, трещины, прогресс и т.д.) — как раньше */
+/* Корректировка высоты терминала для мобильного */
+@media (max-width: 600px) {
+  .terminal {
+    height: calc(100dvh - env(safe-area-inset-bottom)); /* Динамическая высота минус тулбар */
+    padding-bottom: env(safe-area-inset-bottom); /* Отступ снизу */
+  }
+  .output {
+    padding-bottom: env(safe-area-inset-bottom); /* Скролл учитывает тулбар */
+  }
+  .enter-btn {
+    padding: 5px 10px;
+    font-size: 1rem;
+  }
+}
+
+/* Общий фикс для всех устройств */
+body {
+  padding-bottom: env(safe-area-inset-bottom); /* Глобальный отступ снизу */
+}
